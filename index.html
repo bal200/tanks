@@ -1,0 +1,192 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Bals game</title>
+        <script src="phaser\build\phaser.js"></script>
+    </head>
+    <body>
+
+    <script type="text/javascript">
+
+    
+
+// Phaser current version test environment
+// Smoothed camera with parallax scrolling 
+
+var game = new Phaser.Game(800, 600, Phaser.WEBGL, 'Tanks');
+
+var BasicGame = function(game) {};
+
+BasicGame.Boot = function (game) {
+    // nothing here
+};
+
+var cameraMidPos = new Phaser.Point(0, 0);
+var bitmap;
+var worldScale = 1;
+var level = {
+  x:0,  y:-500,  /* world size */
+  x2:1536, y2:2048,
+  
+}
+BasicGame.Boot.prototype = 
+{
+    preload: function() {
+      game.time.advancedTiming = true;
+      game.load.image("background", "background.png");
+      //game.load.image("star", "assets/star.png");
+      
+    },
+	create: function() 
+	{
+        // generate a background so we can see the world/camera movement
+
+        //this.bg = game.add.tileSprite(0, 0, 878, 653, 'background');
+        this.bg = game.add.sprite(0, 0, 'background');
+
+        //this.bg.fixedToCamera = true;
+        //this.bg.tileScale.set(0.5);
+        //this.bg.tint = 0x660000;
+        
+        this.bitmap = this.make.bitmapData(1536,1024);
+        //this.foreground = this.add.bitmapData(1024, 1024, null, true);
+        
+        buildMap(this.bitmap);
+        this.foreground = game.add.image(0, 0, this.bitmap);
+        //this.foreground.fixedToCamera = true;
+        //this.bgnear.tint = 0xcc4400;
+        
+        
+        /*** Hero ***/
+        this.player = game.add.group();
+        this.player.speed = 5;
+        
+        var playerGraphics = game.add.graphics();
+        playerGraphics.beginFill(0x00ffff);
+        playerGraphics.drawCircle(0, 0, 16);
+        this.player.add(playerGraphics);
+        
+        this.cursors = this.input.keyboard.createCursorKeys();
+        this.fireButton = this.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+        this.fireButton.onDown.add(this.fire, this);
+        
+        this.game.world.setBounds(0, -500, 1536, 2048);
+        cameraMidPos.setTo(this.player.x, this.player.y);
+        //this.game.camera.reset();
+        
+        function buildMap(bitmap) {
+          for (var n=0; n<1024; n+=64) {
+            bitmap.rect(n+0, 0, 32, 32, '#cc4400');
+            bitmap.rect(n+32, 32, 32, 32, '#cc4400');
+          }
+          for (var n=0; n<1536; n+=64) {
+            bitmap.rect(n+0, 512+0, 32, 32, '#cc4400');
+            bitmap.rect(n+32, 512+32, 32, 32, '#cc4400');
+          }
+        }
+    },
+    fire: function () {
+      var x = this.player.x;
+      var y = this.player.y;
+      //this.bitmap.draw('star', x,y);
+      this.bitmap.blendDestinationOut();
+      this.bitmap.circle(x, y, 16);
+      this.bitmap.blendReset();
+      //this.bitmap.update();
+      this.bitmap.dirty = true;
+      //this.bitmap.render();
+      
+    },
+    update: function() 
+    {
+        if (this.cursors.left.isDown) {
+            this.player.x -= this.player.speed;
+        }
+        else if (this.cursors.right.isDown) {
+            this.player.x += this.player.speed;   
+        }
+        if (this.cursors.up.isDown) {
+            this.player.y -= this.player.speed;
+        }
+        else if (this.cursors.down.isDown) {
+            this.player.y += this.player.speed;   
+        }
+            // zoom
+    if (game.input.keyboard.isDown(Phaser.Keyboard.Q)) {
+        worldScale += 0.01;
+    }
+    else if (game.input.keyboard.isDown(Phaser.Keyboard.A)) {
+        worldScale -= 0.01;
+    }
+        // set a minimum and maximum scale value
+        worldScale = Phaser.Math.clamp(worldScale, 0.75, 1.2);
+        
+
+        // change this value to alter the amount of damping, lower values = smoother camera movement
+        var lerp = 0.1;
+        /* calc middle point of camera in world coords */
+        cameraMidPos.x += (this.player.x - cameraMidPos.x) * lerp; /* find the screen middle in World */
+        cameraMidPos.y += (this.player.y - cameraMidPos.y) * lerp;
+        
+        /* Note: screen width including scaling is (game.width/worldScale)  */
+        var screenSizeScaled = new Phaser.Point(game.width/worldScale,
+                                                game.height/worldScale);
+        
+        /* work out camera offset, based on Scale, and camera coords are for top left of camera */
+        /* Camera middle - half screen width, allowing for scaling of screen too */
+        game.world.pivot.x = cameraMidPos.x - (screenSizeScaled.x /2);
+        game.world.pivot.y = cameraMidPos.y - (screenSizeScaled.y /2);
+        /* Limit camera to world bounds */
+        game.world.pivot.x = Phaser.Math.clamp(game.world.pivot.x, 0,game.world.width - screenSizeScaled.x);
+        game.world.pivot.y = Phaser.Math.clamp(game.world.pivot.y, -1024,game.world.height - screenSizeScaled.y);
+        
+        //this.game.camera.focusOnXY(cameraMidPos.x, cameraMidPos.y);
+        /* Work out Camera Middle again, but this time it will include any Clamping */
+        var newCamMid = new Phaser.Point(game.world.pivot.x + (screenSizeScaled.x /2),
+                                         game.world.pivot.y + (screenSizeScaled.y /2));
+        
+        // set our world scale as needed
+        game.world.scale.set(worldScale);
+        
+        
+        /** A percentage of the main screen Scale will be the Backgrounds scale.
+         ** small values = slow, distant looking background */
+        var bgScale =  0.10;
+        //var bgWidth = ((game.width/worldScale) * bgScale);
+        //var bgWidthDif =  (bgWidth - (game.width/worldScale)) /2;
+        this.bg.scale.set( (1/worldScale) * reduceAScale(worldScale, bgScale)   );
+        
+        var bgSizeScaled = new Phaser.Point(this.bg.width, this.bg.height);
+        
+        this.bg.position.set(newCamMid.x - (screenSizeScaled.x /2) - (newCamMid.x * bgScale),
+                             newCamMid.y - (screenSizeScaled.y /2) - (newCamMid.y * bgScale));
+        //this.bg.position.set(game.world.pivot.x -(bgScale), game.world.pivot.y * 1);
+        
+        //this.bg.tilePosition.set(this.game.camera.x * -0.1, this.game.camera.y * -0.1);
+        //this.foreground.position.set(this.game.camera.x * -1, this.game.camera.y * -1);
+        
+        function reduceAScale(scale, ratio) {
+          return ((scale-1)*ratio) +1;
+        }
+    }, 
+    render: function()
+    {
+        game.debug.text(game.time.fps+"fps "+
+                        "cam "+game.camera.x+","+game.camera.y+" "
+                        //+game.player.x+","+game.player.y+" "
+                        +"scale "+worldScale
+                        || '--', 2, 14, "#00ff00");   
+    }
+};
+
+
+
+game.state.add('Boot', BasicGame.Boot);
+game.state.start('Boot');
+    
+
+    </script>
+
+    </body>
+</html>
