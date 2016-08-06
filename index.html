@@ -22,13 +22,17 @@ BasicGame.Boot = function (game) {
     // nothing here
 };
 
-var cameraMidPos = new Phaser.Point(0, 0);
+var cameraMidPos = new Phaser.Point(0, 0);  /* my camera */
 var bitmap;
 var worldScale = 1;
 var level = {
-  x:0,  y:-500,  /* world size */
-  x2:1536, y2:2048,
-  
+  x:0,  y:-1024,  /* world size */
+  x2:2048, y2:2048,
+  bgPercent : 0.15, /** A percentage of the main screen Scale will be the Backgrounds scale.
+                     ** small values = a slow moving, distant background */
+  bgOffset: 350   /** Because the background maths is calcelated from the screen middle, you may need to
+                   ** pull the background more to the left and the top. Tweak this to make sure the
+                   ** background fully covers over the whole world.*/
 }
 BasicGame.Boot.prototype = 
 {
@@ -49,7 +53,7 @@ BasicGame.Boot.prototype =
         //this.bg.tileScale.set(0.5);
         //this.bg.tint = 0x660000;
         
-        this.bitmap = this.make.bitmapData(1536,1024);
+        this.bitmap = this.make.bitmapData(2048,1024);
         //this.foreground = this.add.bitmapData(1024, 1024, null, true);
         
         buildMap(this.bitmap);
@@ -71,7 +75,7 @@ BasicGame.Boot.prototype =
         this.fireButton = this.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
         this.fireButton.onDown.add(this.fire, this);
         
-        this.game.world.setBounds(0, -500, 1536, 2048);
+        this.game.world.setBounds(level.x,level.y, level.x2,level.y2);
         cameraMidPos.setTo(this.player.x, this.player.y);
         //this.game.camera.reset();
         
@@ -80,9 +84,11 @@ BasicGame.Boot.prototype =
             bitmap.rect(n+0, 0, 32, 32, '#cc4400');
             bitmap.rect(n+32, 32, 32, 32, '#cc4400');
           }
-          for (var n=0; n<1536; n+=64) {
-            bitmap.rect(n+0, 512+0, 32, 32, '#cc4400');
-            bitmap.rect(n+32, 512+32, 32, 32, '#cc4400');
+          for (var n=0; n<2048; n+=64) {
+            var col = '#cc4400';
+            if (n>=1024)  col='#0044cc';
+            bitmap.rect(n+0, 512+0, 32, 32, col);
+            bitmap.rect(n+32, 512+32, 32, 32, col);
           }
         }
     },
@@ -120,7 +126,7 @@ BasicGame.Boot.prototype =
         worldScale -= 0.01;
     }
         // set a minimum and maximum scale value
-        worldScale = Phaser.Math.clamp(worldScale, 0.75, 1.2);
+        worldScale = Phaser.Math.clamp(worldScale, 0.50, 1.2);
         
 
         // change this value to alter the amount of damping, lower values = smoother camera movement
@@ -138,8 +144,8 @@ BasicGame.Boot.prototype =
         game.world.pivot.x = cameraMidPos.x - (screenSizeScaled.x /2);
         game.world.pivot.y = cameraMidPos.y - (screenSizeScaled.y /2);
         /* Limit camera to world bounds */
-        game.world.pivot.x = Phaser.Math.clamp(game.world.pivot.x, 0,game.world.width - screenSizeScaled.x);
-        game.world.pivot.y = Phaser.Math.clamp(game.world.pivot.y, -1024,game.world.height - screenSizeScaled.y);
+        game.world.pivot.x = Phaser.Math.clamp(game.world.pivot.x, level.x, level.x2 - screenSizeScaled.x);
+        game.world.pivot.y = Phaser.Math.clamp(game.world.pivot.y, level.y, level.y2 - screenSizeScaled.y);
         
         //this.game.camera.focusOnXY(cameraMidPos.x, cameraMidPos.y);
         /* Work out Camera Middle again, but this time it will include any Clamping */
@@ -149,18 +155,22 @@ BasicGame.Boot.prototype =
         // set our world scale as needed
         game.world.scale.set(worldScale);
         
-        
+        var bgPercent = level.bgPercent;
         /** A percentage of the main screen Scale will be the Backgrounds scale.
          ** small values = slow, distant looking background */
-        var bgScale =  0.10;
+        var bgScale =  (1/worldScale) * reduceAScale(worldScale, bgPercent);
+        
         //var bgWidth = ((game.width/worldScale) * bgScale);
         //var bgWidthDif =  (bgWidth - (game.width/worldScale)) /2;
-        this.bg.scale.set( (1/worldScale) * reduceAScale(worldScale, bgScale)   );
-        
-        var bgSizeScaled = new Phaser.Point(this.bg.width, this.bg.height);
-        
-        this.bg.position.set(newCamMid.x - (screenSizeScaled.x /2) - (newCamMid.x * bgScale),
-                             newCamMid.y - (screenSizeScaled.y /2) - (newCamMid.y * bgScale));
+        this.bg.scale.set(  bgScale   );
+        var bgOffset = level.bgOffset;
+        //var bgSizeScaled = new Phaser.Point(this.bg.width, this.bg.height);
+        //var x = newCamMid.x;
+        this.bg.position.set(newCamMid.x
+                              -(( (newCamMid.x*bgPercent)+bgOffset ) * bgScale),//- (screenSizeScaled.x /2),
+                           //  - ( (newCamMid.x-(screenSizeScaled.x /2)) * 0.1),
+                             (newCamMid.y)-(((newCamMid.y*bgPercent)+bgOffset) * bgScale) ); //- (screenSizeScaled.y /2));
+                           //  - ( newCamMid.y * 0.1));
         //this.bg.position.set(game.world.pivot.x -(bgScale), game.world.pivot.y * 1);
         
         //this.bg.tilePosition.set(this.game.camera.x * -0.1, this.game.camera.y * -0.1);
