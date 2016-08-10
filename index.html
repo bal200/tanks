@@ -11,22 +11,24 @@
     <body>
     <script type="text/javascript">
 
-
-// Smoothed camera with parallax scrolling 
-
 var game = new Phaser.Game(800, 600, Phaser.WEBGL, 'Tanks');
-
 var BasicGame = function(game) {};
-
 BasicGame.Boot = function (game) {
     // nothing here
 };
+
+/********  Game Variable Declarations  *****************************************/
+/*******************************************************************************/
+
 /***** My Camera initialisation **********/
 var cameraMidPos = new Phaser.Point(0, 0);  /* my camera */
 var worldScale = 1;
 
+/***** Foreground (Land) **********/   
 var bitmap;
-var level = {
+var bulletTime=0;
+
+var level = {  /* Settings for this particular level in the game */
   x:0,  y:-1024,  /* world size */
   x2:2048, y2:2048,
   bgPercent : 0.15,  /** This percentage of the main screen Scale will be used as the Backgrounds scale.
@@ -42,13 +44,20 @@ BasicGame.Boot.prototype =
     game.time.advancedTiming = true;
     game.load.image("background", "background 1139x892.png");
     game.load.image("star", "assets/star.png");
+    game.load.image("bullet", "assets/bullet.png");
     
     game.load.tilemap('tilemap', 'assets/tilemap.json', null, Phaser.Tilemap.TILED_JSON);
     game.load.image('jungletileset', 'assets/jungletileset.png');
     
   },
+
+  /**********  Create Function  ************************************************/
+  /*****************************************************************************/
 	create: function() 
 	{
+    game.physics.startSystem(Phaser.Physics.ARCADE);
+    game.physics.arcade.gravity.y = 200;
+    
     /******* Parallax Background ********/
 
     //this.bg = game.add.tileSprite(0, 0, 878, 653, 'background');
@@ -77,7 +86,6 @@ BasicGame.Boot.prototype =
     //this.foreground.fixedToCamera = true;
     //this.bgnear.tint = 0xcc4400;
     
-    
     /******* Player ********************/
     this.player = game.add.group();
     this.player.speed = 5;
@@ -93,6 +101,23 @@ BasicGame.Boot.prototype =
     
     this.game.world.setBounds(level.x,level.y, level.x2,level.y2);
     
+    /************ Bullets *****************/
+    var bullets = this.bullets = game.add.group();
+    bullets.enableBody = true;
+    bullets.physicsBodyType = Phaser.Physics.ARCADE;
+
+    for (var i = 0; i < 20; i++)
+    {
+        var b = bullets.create(0, 0, 'bullet');
+        b.name = 'bullet' + i;
+        b.exists = false;
+        b.visible = false;
+        b.checkWorldBounds = true;
+        b.events.onOutOfBounds.add(function(bullet) {
+          bullet.kill();
+        }, this);
+    }
+    
     /****** My Camera *****************/
     cameraMidPos.setTo(this.player.x, this.player.y);
     //this.game.camera.reset();
@@ -102,17 +127,20 @@ BasicGame.Boot.prototype =
     }
   },
   fire: function () {
-    var x = this.player.x;
-    var y = this.player.y;
-    //this.bitmap.draw('star', x,y);
-    this.bitmap.blendDestinationOut();
-    this.bitmap.circle(x, y, 16);
-    this.bitmap.blendReset();
-    //this.bitmap.update();
-    this.bitmap.dirty = true;
-    //this.bitmap.render();
     
+    if (game.time.now > bulletTime)
+    {
+        var bullet = this.bullets.getFirstExists(false);
+        if (bullet) {
+            bullet.reset(this.player.x + 6, this.player.y - 6);
+            bullet.body.velocity.y = -300;
+            bullet.body.velocity.x = +300;
+            bulletTime = game.time.now + 200;
+        }
+    }
   },
+  /**********  Update Function  ************************************************/
+  /*****************************************************************************/
   update: function() 
   {
     if (this.cursors.left.isDown) {
@@ -130,12 +158,23 @@ BasicGame.Boot.prototype =
         worldScale -= 0.01;
     }
 
-    /********** Foreground ********************/
+    /********** Foreground ************************************/
     if (++this.count == 3) {
       this.bitmap.draw( this.layer );
       this.foreground = game.add.image(0, 0, this.bitmap);
+      this.bitmap.update();
       this.layer.destroy();
     }
+    /********** Bullets ***************************************/
+    checkBulletsToLand(this.bullets, this.bitmap);
+    this.bullets.forEachExists(function(bullet) {
+      
+      bullet.angle = Phaser.Math.radToDeg(
+                     Phaser.Math.angleBetween(0,0, bullet.body.deltaX(), bullet.body.deltaY()));
+      //console.log(bullet.angle);
+      
+      //bullet.angle=30;
+    }, this);
     
     /********** My Camera **************************************/
     // change this value to alter the amount of damping, lower values = smoother camera movement
@@ -144,6 +183,7 @@ BasicGame.Boot.prototype =
     cameraMidPos.x += (this.player.x - cameraMidPos.x) * lerp; /* find the screen middle in World */
     cameraMidPos.y += (this.player.y - cameraMidPos.y) * lerp;
     
+    /* temporary zoom out trigger from player movement */
       var dist = Math.abs( cameraMidPos.distance(this.player) );
       var target = 1/ (1.0 + (dist*0.007));
       scaleDif = target - worldScale;
@@ -212,7 +252,24 @@ BasicGame.Boot.prototype =
   }
 };
 
+function checkBulletsToLand(bullets, bitmap) {
+  bullets.forEachExists(function(bullet,bitmap) {
+    var x = Math.floor(bullet.x);
+    var y = Math.floor(bullet.y);
+    var rgba = bitmap.getPixel(x, y);
+    //console.log( "rgba rga "+rgba.r+" "+rgba.g+" "+rgba.a );
+    if (rgba.a > 0) {
+      /* Erase a Circle in the land to make a crater */
+      bitmap.blendDestinationOut();
+      bitmap.circle(x, y, 16);
+      bitmap.blendReset();
+      bitmap.update();
+      bitmap.dirty = true;
+      bullet.kill();
+    }
+  }, this, bitmap);
 
+}
 
 game.state.add('Boot', BasicGame.Boot);
 game.state.start('Boot');
