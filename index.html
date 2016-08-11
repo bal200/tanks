@@ -4,14 +4,15 @@
         <meta charset="UTF-8" />
         <title>Bals game</title>
         <!-- use local Phaser Lib -->
-        <script src="phaser\build\phaser.js"></script>
+        <!-- <script src="phaser\build\phaser.js"></script>
+        -->
         <!-- use CDN Phaser Lib -->
-        <!-- <script src="//cdn.jsdelivr.net/phaser/2.2.2/phaser.min.js"></script>  -->
+        <script src="//cdn.jsdelivr.net/phaser/2.2.2/phaser.min.js"></script>
     </head>
     <body>
     <script type="text/javascript">
 
-var game = new Phaser.Game(800, 600, Phaser.WEBGL, 'Tanks');
+var game = new Phaser.Game(900, 600, Phaser.WEBGL, 'Tanks');
 var BasicGame = function(game) {};
 BasicGame.Boot = function (game) {
     // nothing here
@@ -42,12 +43,12 @@ BasicGame.Boot.prototype =
 {
   preload: function() {
     game.time.advancedTiming = true;
-    game.load.image("background", "background 1139x892.png");
+    game.load.image("background", "assets/background 1139x892.png");
     game.load.image("star", "assets/star.png");
     game.load.image("bullet", "assets/bullet.png");
     
-    game.load.tilemap('tilemap', 'assets/tilemap.json', null, Phaser.Tilemap.TILED_JSON);
-    game.load.image('jungletileset', 'assets/jungletileset.png');
+    game.load.tilemap('tilemap', 'assets/tilemap2.json', null, Phaser.Tilemap.TILED_JSON);
+    game.load.image('jungletileset', 'assets/jungletileset_32x32.png');
     
   },
 
@@ -72,23 +73,19 @@ BasicGame.Boot.prototype =
       this.tilemap = this.add.tilemap('tilemap');
       //this.tilemap = new Phaser.Tilemap(game,'tilemap');
                                /* name in map data,  cache image name to use */
-      this.tilemap.addTilesetImage('jungletileset', 'jungletileset');
+      this.tilemap.addTilesetImage('jungletileset_32x32', 'jungletileset');
 
-      this.layer = this.tilemap.createLayer('Tile Layer 1');
-
-    this.bitmap = this.make.bitmapData(2048,1024);
+      this.layer = this.tilemap.createLayer('Tile Layer 1', this.tilemap.widthInPixels, this.tilemap.heightInPixels);
+      this.layer.fixedToCamera = false;
+      
     this.count = 0;
-    //buildMap(this.bitmap);
-     
-//    this.bitmap.draw( this.layer );
-//    this.foreground = game.add.image(0, 0, this.bitmap);
-//    this.layer.destroy();
-    //this.foreground.fixedToCamera = true;
-    //this.bgnear.tint = 0xcc4400;
+    
     
     /******* Player ********************/
     this.player = game.add.group();
     this.player.speed = 5;
+    this.player.x=430;
+    this.player.y=400;
     
     var playerGraphics = game.add.graphics();
     playerGraphics.beginFill(0x00ffff);
@@ -113,6 +110,7 @@ BasicGame.Boot.prototype =
         b.exists = false;
         b.visible = false;
         b.checkWorldBounds = true;
+        b.lastX=0; b.lastY=0;
         b.events.onOutOfBounds.add(function(bullet) {
           bullet.kill();
         }, this);
@@ -121,15 +119,13 @@ BasicGame.Boot.prototype =
     /****** My Camera *****************/
     cameraMidPos.setTo(this.player.x, this.player.y);
     //this.game.camera.reset();
+    worldScale = 1.20; /* begin with camera slowly zoom out for drama */
     
-    function buildMap(bitmap) {
-      
-    }
   },
   fire: function () {
     
-    if (game.time.now > bulletTime)
-    {
+    //if (game.time.now > bulletTime)
+    //{
         var bullet = this.bullets.getFirstExists(false);
         if (bullet) {
             bullet.reset(this.player.x + 6, this.player.y - 6);
@@ -137,7 +133,7 @@ BasicGame.Boot.prototype =
             bullet.body.velocity.x = +300;
             bulletTime = game.time.now + 200;
         }
-    }
+    //}
   },
   /**********  Update Function  ************************************************/
   /*****************************************************************************/
@@ -159,21 +155,21 @@ BasicGame.Boot.prototype =
     }
 
     /********** Foreground ************************************/
-    if (++this.count == 3) {
+    if (++this.count == 20) {
+      
+      this.bitmap = this.make.bitmapData(this.tilemap.widthInPixels, this.tilemap.heightInPixels);
       this.bitmap.draw( this.layer );
       this.foreground = game.add.image(0, 0, this.bitmap);
       this.bitmap.update();
       this.layer.destroy();
     }
     /********** Bullets ***************************************/
+    /* check if any of the bullets have hit the destructable landscape */
     checkBulletsToLand(this.bullets, this.bitmap);
+    /* set the bullets angles to their direction of travel */
     this.bullets.forEachExists(function(bullet) {
-      
       bullet.angle = Phaser.Math.radToDeg(
                      Phaser.Math.angleBetween(0,0, bullet.body.deltaX(), bullet.body.deltaY()));
-      //console.log(bullet.angle);
-      
-      //bullet.angle=30;
     }, this);
     
     /********** My Camera **************************************/
@@ -190,7 +186,7 @@ BasicGame.Boot.prototype =
       worldScale += scaleDif * 0.01;/* lerp */
       
     // set a minimum and maximum scale value
-    worldScale = Phaser.Math.clamp(worldScale, 0.50, 1.2);
+    worldScale = Phaser.Math.clamp(worldScale, 0.60, 1.2);
     
     // set our world scale
     game.world.scale.set(worldScale);
@@ -256,17 +252,21 @@ function checkBulletsToLand(bullets, bitmap) {
   bullets.forEachExists(function(bullet,bitmap) {
     var x = Math.floor(bullet.x);
     var y = Math.floor(bullet.y);
-    var rgba = bitmap.getPixel(x, y);
-    //console.log( "rgba rga "+rgba.r+" "+rgba.g+" "+rgba.a );
-    if (rgba.a > 0) {
-      /* Erase a Circle in the land to make a crater */
-      bitmap.blendDestinationOut();
-      bitmap.circle(x, y, 16);
-      bitmap.blendReset();
-      bitmap.update();
-      bitmap.dirty = true;
-      bullet.kill();
+    if (bitmap){
+      var rgba = bitmap.getPixel(x, y);
+      //console.log( "rgba rga "+rgba.r+" "+rgba.g+" "+rgba.a );
+      if (rgba.a > 0) {
+        /* Erase a Circle in the land to make a crater */
+        bitmap.blendDestinationOut();
+        bitmap.circle(bullet.lastX, bullet.lastY, 16);
+        bitmap.blendReset();
+        bitmap.update();
+        bitmap.dirty = true;
+        bullet.kill();
+      }
     }
+    bullet.lastX = x;
+    bullet.lastY = y;
   }, this, bitmap);
 
 }
