@@ -23,7 +23,8 @@ BasicGame.Boot = function (game) {
 
 /***** My Camera initialisation **********/
 var cameraMidPos = new Phaser.Point(0, 0);  /* my camera */
-var worldScale = 1;
+var worldScale = 1.0;
+var worldScaleTarget = 1.0;
 
 /***** Foreground (Land) **********/   
 var bitmap;
@@ -155,7 +156,7 @@ BasicGame.Boot.prototype =
     }
 
     /********** Foreground ************************************/
-    if (++this.count == 20) {
+    if (++this.count == 4) {
       
       this.bitmap = this.make.bitmapData(this.tilemap.widthInPixels, this.tilemap.heightInPixels);
       this.bitmap.draw( this.layer );
@@ -180,13 +181,14 @@ BasicGame.Boot.prototype =
     cameraMidPos.y += (this.player.y - cameraMidPos.y) * lerp;
     
     /* temporary zoom out trigger from player movement */
-      var dist = Math.abs( cameraMidPos.distance(this.player) );
-      var target = 1/ (1.0 + (dist*0.007));
-      scaleDif = target - worldScale;
-      worldScale += scaleDif * 0.01;/* lerp */
+      //var dist = Math.abs( cameraMidPos.distance(this.player) );
+      //var worldScaleTarget = 1/ (1.0 + (dist*0.007));
+      //worldScaleTarget = 
+      scaleDif = worldScaleTarget - worldScale;
+      worldScale += scaleDif * 0.05;/* lerp */
       
     // set a minimum and maximum scale value
-    worldScale = Phaser.Math.clamp(worldScale, 0.60, 1.2);
+    worldScale = Phaser.Math.clamp(worldScale, 0.4, 1.2);
     
     // set our world scale
     game.world.scale.set(worldScale);
@@ -249,9 +251,12 @@ BasicGame.Boot.prototype =
 };
 
 function checkBulletsToLand(bullets, bitmap) {
+  var over=0;
   bullets.forEachExists(function(bullet,bitmap) {
     var x = Math.floor(bullet.x);
     var y = Math.floor(bullet.y);
+    /* quick hack for screen zoom out trigger */
+    if (x > 600) { setWorldScale(2); over=1;}
     if (bitmap){
       var rgba = bitmap.getPixel(x, y);
       //console.log( "rgba rga "+rgba.r+" "+rgba.g+" "+rgba.a );
@@ -268,8 +273,20 @@ function checkBulletsToLand(bullets, bitmap) {
     bullet.lastX = x;
     bullet.lastY = y;
   }, this, bitmap);
-
+  if (over==0 & bullets.lastOver==1) {
+      setTimeout(function(){
+        setWorldScale(1);
+      }, 2000);
+  }
+  bullets.lastOver=over;
+  
 }
+function setWorldScale( i ) {
+  if (i==1) worldScaleTarget=1.0; /* zoomed in on base */
+  if (i==2) worldScaleTarget=0.55; /* zoomed out for firing */
+  if (i==3) worldScaleTarget=0.48; /* extended zoom out - for distance firing */
+}
+
 
 game.state.add('Boot', BasicGame.Boot);
 game.state.start('Boot');
