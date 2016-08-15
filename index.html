@@ -4,10 +4,10 @@
         <meta charset="UTF-8" />
         <title>Bals game</title>
         <!-- use local Phaser Lib -->
-        <!-- <script src="phaser\build\phaser.js"></script>
-        -->
+        <!--<script src="phaser\build\phaser.js"></script> -->
         <!-- use CDN Phaser Lib -->
-        <script src="//cdn.jsdelivr.net/phaser/2.2.2/phaser.min.js"></script>
+        <script src="//cdn.jsdelivr.net/phaser/2.6.1/phaser.min.js"></script>
+        
     </head>
     <body>
     <script type="text/javascript">
@@ -47,6 +47,7 @@ BasicGame.Boot.prototype =
     game.load.image("background", "assets/background 1139x892.png");
     game.load.image("star", "assets/star.png");
     game.load.image("bullet", "assets/bullet.png");
+    game.load.image("joystick", "assets/joystick.png");
     
     game.load.tilemap('tilemap', 'assets/tilemap2.json', null, Phaser.Tilemap.TILED_JSON);
     game.load.image('jungletileset', 'assets/jungletileset_32x32.png');
@@ -68,9 +69,7 @@ BasicGame.Boot.prototype =
     //this.bg.tileScale.set(0.5);
     //this.bg.tint = 0x660000;
 
-
     /*****  Foreground (Land) **********/    
-      
       this.tilemap = this.add.tilemap('tilemap');
       //this.tilemap = new Phaser.Tilemap(game,'tilemap');
                                /* name in map data,  cache image name to use */
@@ -79,19 +78,22 @@ BasicGame.Boot.prototype =
       this.layer = this.tilemap.createLayer('Tile Layer 1', this.tilemap.widthInPixels, this.tilemap.heightInPixels);
       this.layer.fixedToCamera = false;
       
-    this.count = 0;
-    
+      this.count = 0;
     
     /******* Player ********************/
-    this.player = game.add.group();
-    this.player.speed = 5;
-    this.player.x=430;
-    this.player.y=400;
+    this.player = game.add.sprite(430,400,'star'); //game.add.group();
+    this.player.speed = 400;
+    this.player.anchor.set(0.5, 0.5);
+    //this.player.x=430; this.player.y=400;
+    this.player.enableBody = true;
+    this.player.physicsBodyType = Phaser.Physics.ARCADE;
+    game.physics.enable(this.player, Phaser.Physics.ARCADE);
+    this.player.body.allowGravity = false;
     
-    var playerGraphics = game.add.graphics();
-    playerGraphics.beginFill(0x00ffff);
-    playerGraphics.drawCircle(0, 0, 16);
-    this.player.add(playerGraphics);
+    //var playerGraphics = game.add.graphics();
+    //playerGraphics.beginFill(0x00ffff);
+    //playerGraphics.drawCircle(0, 0, 16);
+    //this.player.add(playerGraphics);
     
     this.cursors = this.input.keyboard.createCursorKeys();
     this.fireButton = this.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
@@ -111,16 +113,44 @@ BasicGame.Boot.prototype =
         b.exists = false;
         b.visible = false;
         b.checkWorldBounds = true;
+        b.anchor.set(0.5, 0.5);
         b.lastX=0; b.lastY=0;
         b.events.onOutOfBounds.add(function(bullet) {
           bullet.kill();
         }, this);
     }
+    /****** Joystick ******************/
+    this.joystick = game.add.group();
+    //var joyGraph = game.add.graphics();
+    //joyGraph.beginFill(0x888899, 0.9);
+    //joyGraph.drawCircle(0,0 , 120);
+    //this.joystick.add(joyGraph);
+    //this.joystickBack = game.add.button(0, 0, 'joystick', nothing, this, 2, 1, 0);
+    this.joystickBack = game.add.sprite(0,0, 'joystick');
+    this.joystickBack.alpha = 0.4;
+    this.joystickBack.anchor.set(0.5,0.5);
+    //this.joystickBack.inputEnabled = true;
+    //this.joystickBack.events.onInputDown.add(pointerOnDown, this);
+    this.joystick.add( this.joystickBack );
+    /* button */
+    this.button = game.add.group();
+    this.button = game.add.button(0,0, 'joystick', this.fire, this,0,0,0);
+    this.button.alpha = 0.4;
+    this.button.scale.set(screenToWorldScale(0.6));
+    this.button.anchor.set(0.5,0.5);
+    
+
+    
+    game.world.bringToTop(this.joystick);
+    
+    game.input.onDown.add(pointerOnDown, this);
+    game.input.onUp.add(pointerOnUp, this);
+    
     
     /****** My Camera *****************/
     cameraMidPos.setTo(this.player.x, this.player.y);
     //this.game.camera.reset();
-    worldScale = 1.20; /* begin with camera slowly zoom out for drama */
+    worldScale = 1.20; /* begin with camera slowly zooming out for drama */
     
   },
   fire: function () {
@@ -140,14 +170,16 @@ BasicGame.Boot.prototype =
   /*****************************************************************************/
   update: function() 
   {
+//    this.player.body.velocity.x=0;
+//    this.player.body.velocity.y=0;
     if (this.cursors.left.isDown) {
-        this.player.x -= this.player.speed; }
+        this.player.body.velocity.x = -this.player.speed; }
     else if (this.cursors.right.isDown) {
-        this.player.x += this.player.speed; }
+        this.player.body.velocity.x = this.player.speed; }
     if (this.cursors.up.isDown) {
-        this.player.y -= this.player.speed; }
+        this.player.body.velocity.y = -this.player.speed; }
     else if (this.cursors.down.isDown) {
-        this.player.y += this.player.speed; }
+        this.player.body.velocity.y = this.player.speed; }
     // zoom
     if (game.input.keyboard.isDown(Phaser.Keyboard.Q)) {
         worldScale += 0.01; }
@@ -156,13 +188,16 @@ BasicGame.Boot.prototype =
     }
 
     /********** Foreground ************************************/
-    if (++this.count == 4) {
-      
+    /* now the tilemap has been rendered, copy it to a bitmap instead, so our destructable landscape works */
+    if (++this.count == 40) {
       this.bitmap = this.make.bitmapData(this.tilemap.widthInPixels, this.tilemap.heightInPixels);
       this.bitmap.draw( this.layer );
       this.foreground = game.add.image(0, 0, this.bitmap);
       this.bitmap.update();
       this.layer.destroy();
+      game.world.bringToTop(this.joystick);
+      game.world.bringToTop(this.button);
+
     }
     /********** Bullets ***************************************/
     /* check if any of the bullets have hit the destructable landscape */
@@ -172,6 +207,8 @@ BasicGame.Boot.prototype =
       bullet.angle = Phaser.Math.radToDeg(
                      Phaser.Math.angleBetween(0,0, bullet.body.deltaX(), bullet.body.deltaY()));
     }, this);
+    
+
     
     /********** My Camera **************************************/
     // change this value to alter the amount of damping, lower values = smoother camera movement
@@ -233,11 +270,22 @@ BasicGame.Boot.prototype =
                         (newCamMid.y) /* same for Y */
                           -(( (newCamMid.y*bgPercent)+bgOffset.y ) * bgScale) );
 
-
-
     function reduceAScale(scale, ratio) {
       return ((scale-1)*ratio) +1;
     }
+    
+   
+   
+    /********** Joystick *******************************************/
+    /* position joystick in screen coords, rather than world coords. */
+    var p = screenToWorld( { x:60, y:game.height-60 } );
+    this.joystick.x = p.x; this.joystick.y = p.y;
+    this.joystick.scale.set(screenToWorldScale(1));
+    
+    var p = screenToWorld( { x:game.width-60, y:game.height-60 } );
+    this.button.x = p.x; this.button.y = p.y;
+    this.button.scale.set(screenToWorldScale(0.6));
+    
   }, 
   render: function()
   {
@@ -245,10 +293,72 @@ BasicGame.Boot.prototype =
                       +"cam "+game.camera.x+","+game.camera.y+" "
                       +"myCam "+game.world.pivot.x.toFixed(0)+","+game.world.pivot.y.toFixed(0)+" "
                       //+game.player.x+","+game.player.y+" "
-                      +"scale "+worldScale.toFixed(2)
+                      +"scale "+worldScale.toFixed(2)+" "
+                      +"player "+this.player.x.toFixed(0)+","+this.player.y.toFixed(0)
                       || '--', 2, 14, "#00ff00");   
   }
 };
+/***************************** Functions **********************************************/
+function pointerOnDown(p) {
+  var w=screenToWorld(p);
+  var s=new Phaser.Point(p.x, p.y);
+  var centre=new Phaser.Point(60, game.height-60);
+  console.log("down "+p.x+","+p.y+" myWorld "+w.x.toFixed(0)+","+w.y.toFixed(0));
+  
+  if (Math.abs( s.distance(centre) ) < 60 ) {
+    /* the press is in our joystick */
+    game.input.addMoveCallback(pointerOnMove, this);
+    console.log("in the joystick");
+    this.joystick.pointerId = p.id;
+    this.joystick.start = s; /* store the starting press position, (in screen coords) */
+    this.joystick.centre = centre;
+  }
+}
+function pointerOnMove(p) {
+  var w=screenToWorld(p);
+  var s=new Phaser.Point(p.x, p.y);
+  console.log("Move "+p.x+","+p.y+" myWorld "+w.x.toFixed(0)+","+w.y.toFixed(0));
+  if (p.id == this.joystick.pointerId) {
+    var start=this.joystick.start;
+    var centre=this.joystick.centre;
+    
+    var dist = start.distance(s);
+    var deltaX = s.x - start.x;
+    var deltaY = s.y - start.y;
+    deltaX = (deltaX / 60) * this.player.speed;
+    deltaY = (deltaY / 60) * this.player.speed;
+    this.player.body.velocity.x = deltaX;
+    this.player.body.velocity.y = deltaY;
+  }
+}
+
+function pointerOnUp(p) {
+  var w=screenToWorld(p);
+  console.log("up "+p.x+","+p.y+" myWorld "+w.x.toFixed(0)+","+w.y.toFixed(0));
+  if (p.id == this.joystick.pointerId) {
+    game.input.deleteMoveCallback(pointerOnMove, this);
+    this.joystick.pointerId = null;
+    this.player.body.velocity.x = 0;
+    this.player.body.velocity.y = 0;
+  }
+}
+
+
+function screenToWorld(s) {
+  w = new Phaser.Point();
+  w.x = ((s.x / worldScale) + game.world.pivot.x);
+  w.y = ((s.y / worldScale) + game.world.pivot.y);
+  return w;
+}
+function worldToScreen(w) {
+  s = new Phaser.Point();
+  s.x = ((w.x - game.world.pivot.x) * worldScale);
+  s.y = ((w.y - game.world.pivot.y) * worldScale);
+  return s;
+}
+function screenToWorldScale(s) {
+  return (1/worldScale) * s;
+}
 
 function checkBulletsToLand(bullets, bitmap) {
   var over=0;
@@ -283,7 +393,7 @@ function checkBulletsToLand(bullets, bitmap) {
 }
 function setWorldScale( i ) {
   if (i==1) worldScaleTarget=1.0; /* zoomed in on base */
-  if (i==2) worldScaleTarget=0.55; /* zoomed out for firing */
+  if (i==2) worldScaleTarget=0.59; /* zoomed out for firing */
   if (i==3) worldScaleTarget=0.48; /* extended zoom out - for distance firing */
 }
 
