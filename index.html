@@ -47,6 +47,7 @@ BasicGame.Boot.prototype =
     game.load.image("background", "assets/background 1139x892.png");
     game.load.image("star", "assets/star.png");
     game.load.image("bullet", "assets/bullet.png");
+    game.load.image("trace", "assets/trace.png");
     game.load.image("joystick", "assets/joystick.png");
     
     game.load.tilemap('tilemap', 'assets/tilemap2.json', null, Phaser.Tilemap.TILED_JSON);
@@ -119,6 +120,17 @@ BasicGame.Boot.prototype =
           bullet.kill();
         }, this);
     }
+    /****** Trace Lines ****************/
+    this.trace = game.add.group();
+    for (var i = 0; i < 100; i++)
+    {
+        var t = this.trace.create(0, 0, 'trace');
+        t.name = 'trace' + i;
+        t.exists = false;
+        t.visible = false;
+        t.anchor.set(0.5, 0.5);
+    }
+    
     /****** Joystick ******************/
     this.joystick = game.add.group();
     //var joyGraph = game.add.graphics();
@@ -161,7 +173,7 @@ BasicGame.Boot.prototype =
         if (bullet) {
             bullet.reset(this.player.x + 6, this.player.y - 6);
             bullet.body.velocity.y = -300;
-            bullet.body.velocity.x = +300;
+            bullet.body.velocity.x = +100;
             bulletTime = game.time.now + 200;
         }
     //}
@@ -208,7 +220,25 @@ BasicGame.Boot.prototype =
                      Phaser.Math.angleBetween(0,0, bullet.body.deltaX(), bullet.body.deltaY()));
     }, this);
     
-
+    /********** Trace Lines ************************************/
+    var trace = this.trace;
+    var p = new Phaser.Point(this.player.x +6, this.player.y -6);
+    var last = new Phaser.Point(this.player.x +6, this.player.y -6);
+    var deltaX = +100 / 100;
+    var deltaY = -300 / 100;
+    for (n=0; n<100; n++) {
+      var t = trace.next();
+      t.reset(p.x, p.y);
+      t.angle = Phaser.Math.radToDeg(
+                  Phaser.Math.angleBetween(0,0, deltaX, deltaY));
+      last.x=p.x; last.y=p.y;
+      do{
+        deltaY += (game.physics.arcade.gravity.y / 100)/100;
+        p.x += deltaX;
+        p.y += deltaY;
+      }while(Math.abs(last.distance(p)) < 25 );
+      
+    }
     
     /********** My Camera **************************************/
     // change this value to alter the amount of damping, lower values = smoother camera movement
@@ -343,7 +373,8 @@ function pointerOnUp(p) {
   }
 }
 
-
+/** Convert coordinates on the screen, like touches, into their position if they were in the game world
+ ** Takes into account the camera position and scaling too */
 function screenToWorld(s) {
   w = new Phaser.Point();
   w.x = ((s.x / worldScale) + game.world.pivot.x);
