@@ -201,7 +201,7 @@ BasicGame.Boot.prototype =
 
     /********** Foreground ************************************/
     /* now the tilemap has been rendered, copy it to a bitmap instead, so our destructable landscape works */
-    if (++this.count == 40) {
+    if (++this.count == 5) {
       this.bitmap = this.make.bitmapData(this.tilemap.widthInPixels, this.tilemap.heightInPixels);
       this.bitmap.draw( this.layer );
       this.foreground = game.add.image(0, 0, this.bitmap);
@@ -221,23 +221,41 @@ BasicGame.Boot.prototype =
     }, this);
     
     /********** Trace Lines ************************************/
-    var trace = this.trace;
-    var p = new Phaser.Point(this.player.x +6, this.player.y -6);
-    var last = new Phaser.Point(this.player.x +6, this.player.y -6);
-    var deltaX = +100 / 100;
-    var deltaY = -300 / 100;
-    for (n=0; n<100; n++) {
-      var t = trace.next();
-      t.reset(p.x, p.y);
-      t.angle = Phaser.Math.radToDeg(
-                  Phaser.Math.angleBetween(0,0, deltaX, deltaY));
-      last.x=p.x; last.y=p.y;
-      do{
-        deltaY += (game.physics.arcade.gravity.y / 100)/100;
-        p.x += deltaX;
-        p.y += deltaY;
-      }while(Math.abs(last.distance(p)) < 25 );
+    if (this.bitmap) {
+      var startNudge = ((new Date).getSeconds() % 2) * 1.9;
       
+      var trace = this.trace;
+      var p = new Phaser.Point(this.player.x +6, this.player.y -6);
+      var last = new Phaser.Point(this.player.x +6, this.player.y -6);
+      var deltaX = +100 / 100;
+      var deltaY = -300 / 100;
+      var collision=false;
+      for (i=0; i<startNudge; i++) {
+            last.x=p.x; last.y=p.y;
+            deltaY += (game.physics.arcade.gravity.y / 100)/100;
+            p.x += deltaX;
+            p.y += deltaY;
+      }
+      for (n=0; n<100; n++) {
+        var t = trace.next();
+        if (collision){
+          t.exists=false; //t.visible=false;
+        }else{
+          t.reset(p.x, p.y);
+          t.angle = Phaser.Math.radToDeg(
+                      Phaser.Math.angleBetween(0,0, deltaX, deltaY));
+          last.x=p.x; last.y=p.y;
+          do{
+            deltaY += (game.physics.arcade.gravity.y / 100)/100;
+            p.x += deltaX;
+            p.y += deltaY;
+            /* Check for land collision */
+            var rgba = this.bitmap.getPixel(Math.floor(p.x), Math.floor(p.y));
+            if (rgba.a > 0) collision=true;
+          }while(Math.abs(last.distance(p)) < 15);
+        }
+        
+      }
     }
     
     /********** My Camera **************************************/
