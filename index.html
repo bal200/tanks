@@ -7,7 +7,10 @@
         <!--<script src="phaser\build\phaser.js"></script> -->
         <!-- use CDN Phaser Lib -->
         <script src="//cdn.jsdelivr.net/phaser/2.6.1/phaser.min.js"></script>
-        
+        <script src="land.js"></script>
+        <script src="player.js"></script>
+        <script src="bullets.js"></script>
+        <script src="mycam.js"></script>
     </head>
     <body>
     <script type="text/javascript">
@@ -21,14 +24,7 @@ BasicGame.Boot = function (game) {
 /********  Game Variable Declarations  *****************************************/
 /*******************************************************************************/
 
-/***** My Camera initialisation **********/
-var cameraMidPos = new Phaser.Point(0, 0);  /* my camera */
-var worldScale = 1.0;
-var worldScaleTarget = 1.0;
 
-/***** Foreground (Land) **********/   
-var bitmap;
-var bulletTime=0;
 
 var level = {  /* Settings for this particular level in the game */
   x:0,  y:-1024,  /* world size */
@@ -63,73 +59,20 @@ BasicGame.Boot.prototype =
     game.physics.arcade.gravity.y = 200;
     
     /******* Parallax Background ********/
-
-    //this.bg = game.add.tileSprite(0, 0, 878, 653, 'background');
     this.bg = game.add.sprite(0, 0, 'background');
     //this.bg.fixedToCamera = true;
     //this.bg.tileScale.set(0.5);
     //this.bg.tint = 0x660000;
 
     /*****  Foreground (Land) **********/    
-      this.tilemap = this.add.tilemap('tilemap');
-      //this.tilemap = new Phaser.Tilemap(game,'tilemap');
-                               /* name in map data,  cache image name to use */
-      this.tilemap.addTilesetImage('jungletileset_32x32', 'jungletileset');
+    createLand(this);
 
-      this.layer = this.tilemap.createLayer('Tile Layer 1', this.tilemap.widthInPixels, this.tilemap.heightInPixels);
-      this.layer.fixedToCamera = false;
-      
-      this.count = 0;
-    
     /******* Player ********************/
-    this.player = game.add.sprite(430,400,'star'); //game.add.group();
-    this.player.speed = 400;
-    this.player.anchor.set(0.5, 0.5);
-    //this.player.x=430; this.player.y=400;
-    this.player.enableBody = true;
-    this.player.physicsBodyType = Phaser.Physics.ARCADE;
-    game.physics.enable(this.player, Phaser.Physics.ARCADE);
-    this.player.body.allowGravity = false;
+    createPlayer(this);
     
-    //var playerGraphics = game.add.graphics();
-    //playerGraphics.beginFill(0x00ffff);
-    //playerGraphics.drawCircle(0, 0, 16);
-    //this.player.add(playerGraphics);
-    
-    this.cursors = this.input.keyboard.createCursorKeys();
-    this.fireButton = this.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
-    this.fireButton.onDown.add(this.fire, this);
-    
-    this.game.world.setBounds(level.x,level.y, level.x2,level.y2);
     
     /************ Bullets *****************/
-    var bullets = this.bullets = game.add.group();
-    bullets.enableBody = true;
-    bullets.physicsBodyType = Phaser.Physics.ARCADE;
-
-    for (var i = 0; i < 20; i++)
-    {
-        var b = bullets.create(0, 0, 'bullet');
-        b.name = 'bullet' + i;
-        b.exists = false;
-        b.visible = false;
-        b.checkWorldBounds = true;
-        b.anchor.set(0.5, 0.5);
-        b.lastX=0; b.lastY=0;
-        b.events.onOutOfBounds.add(function(bullet) {
-          bullet.kill();
-        }, this);
-    }
-    /****** Trace Lines ****************/
-    this.trace = game.add.group();
-    for (var i = 0; i < 100; i++)
-    {
-        var t = this.trace.create(0, 0, 'trace');
-        t.name = 'trace' + i;
-        t.exists = false;
-        t.visible = false;
-        t.anchor.set(0.5, 0.5);
-    }
+    createBullets(this);
     
     /****** Joystick ******************/
     this.joystick = game.add.group();
@@ -146,185 +89,47 @@ BasicGame.Boot.prototype =
     this.joystick.add( this.joystickBack );
     /* button */
     this.button = game.add.group();
-    this.button = game.add.button(0,0, 'joystick', this.fire, this,0,0,0);
+    this.button = game.add.button(0,0, 'joystick', fire, this,0,0,0);
     this.button.alpha = 0.4;
     this.button.scale.set(screenToWorldScale(0.6));
     this.button.anchor.set(0.5,0.5);
     
-
     
     game.world.bringToTop(this.joystick);
-    
+    /* Touch screen event handlers */
     game.input.onDown.add(pointerOnDown, this);
     game.input.onUp.add(pointerOnUp, this);
     
     
     /****** My Camera *****************/
-    cameraMidPos.setTo(this.player.x, this.player.y);
-    //this.game.camera.reset();
-    worldScale = 1.20; /* begin with camera slowly zooming out for drama */
+    createMyCam(this);
     
+
   },
-  fire: function () {
-    
-    //if (game.time.now > bulletTime)
-    //{
-        var bullet = this.bullets.getFirstExists(false);
-        if (bullet) {
-            bullet.reset(this.player.x + 6, this.player.y - 6);
-            bullet.body.velocity.y = -300;
-            bullet.body.velocity.x = +100;
-            bulletTime = game.time.now + 200;
-        }
-    //}
-  },
+
   /**********  Update Function  ************************************************/
   /*****************************************************************************/
   update: function() 
   {
-//    this.player.body.velocity.x=0;
-//    this.player.body.velocity.y=0;
-    if (this.cursors.left.isDown) {
-        this.player.body.velocity.x = -this.player.speed; }
-    else if (this.cursors.right.isDown) {
-        this.player.body.velocity.x = this.player.speed; }
-    if (this.cursors.up.isDown) {
-        this.player.body.velocity.y = -this.player.speed; }
-    else if (this.cursors.down.isDown) {
-        this.player.body.velocity.y = this.player.speed; }
-    // zoom
-    if (game.input.keyboard.isDown(Phaser.Keyboard.Q)) {
-        worldScale += 0.01; }
-    else if (game.input.keyboard.isDown(Phaser.Keyboard.A)) {
-        worldScale -= 0.01;
-    }
-
-    /********** Foreground ************************************/
-    /* now the tilemap has been rendered, copy it to a bitmap instead, so our destructable landscape works */
-    if (++this.count == 5) {
-      this.bitmap = this.make.bitmapData(this.tilemap.widthInPixels, this.tilemap.heightInPixels);
-      this.bitmap.draw( this.layer );
-      this.foreground = game.add.image(0, 0, this.bitmap);
-      this.bitmap.update();
-      this.layer.destroy();
-      game.world.bringToTop(this.joystick);
-      game.world.bringToTop(this.button);
-
-    }
-    /********** Bullets ***************************************/
-    /* check if any of the bullets have hit the destructable landscape */
-    checkBulletsToLand(this.bullets, this.bitmap);
-    /* set the bullets angles to their direction of travel */
-    this.bullets.forEachExists(function(bullet) {
-      bullet.angle = Phaser.Math.radToDeg(
-                     Phaser.Math.angleBetween(0,0, bullet.body.deltaX(), bullet.body.deltaY()));
-    }, this);
     
-    /********** Trace Lines ************************************/
-    if (this.bitmap) {
-      var startNudge = ((new Date).getSeconds() % 2) * 1.9;
-      
-      var trace = this.trace;
-      var p = new Phaser.Point(this.player.x +6, this.player.y -6);
-      var last = new Phaser.Point(this.player.x +6, this.player.y -6);
-      var deltaX = +100 / 100;
-      var deltaY = -300 / 100;
-      var collision=false;
-      for (i=0; i<startNudge; i++) {
-            last.x=p.x; last.y=p.y;
-            deltaY += (game.physics.arcade.gravity.y / 100)/100;
-            p.x += deltaX;
-            p.y += deltaY;
-      }
-      for (n=0; n<100; n++) {
-        var t = trace.next();
-        if (collision){
-          t.exists=false; //t.visible=false;
-        }else{
-          t.reset(p.x, p.y);
-          t.angle = Phaser.Math.radToDeg(
-                      Phaser.Math.angleBetween(0,0, deltaX, deltaY));
-          last.x=p.x; last.y=p.y;
-          do{
-            deltaY += (game.physics.arcade.gravity.y / 100)/100;
-            p.x += deltaX;
-            p.y += deltaY;
-            /* Check for land collision */
-            var rgba = this.bitmap.getPixel(Math.floor(p.x), Math.floor(p.y));
-            if (rgba.a > 0) collision=true;
-          }while(Math.abs(last.distance(p)) < 15);
-        }
-        
-      }
-    }
+    /************ Player **************************************/
+    updatePlayer(this);
+
+    /************ Gun *****************************************/
+    //gun.angle += gun.angleVelocity;
+    //gun.power += gun.powerVelocity;
+    
+    /********** Foreground ************************************/
+    updateLand(this);
+
+    /********** Bullets ***************************************/
+    updateBullets(this);
     
     /********** My Camera **************************************/
-    // change this value to alter the amount of damping, lower values = smoother camera movement
-    var lerp = 0.1;
-    /* calc middle point of camera in world coords */
-    cameraMidPos.x += (this.player.x - cameraMidPos.x) * lerp; /* find the screen middle in World */
-    cameraMidPos.y += (this.player.y - cameraMidPos.y) * lerp;
-    
-    /* temporary zoom out trigger from player movement */
-      //var dist = Math.abs( cameraMidPos.distance(this.player) );
-      //var worldScaleTarget = 1/ (1.0 + (dist*0.007));
-      //worldScaleTarget = 
-      scaleDif = worldScaleTarget - worldScale;
-      worldScale += scaleDif * 0.05;/* lerp */
-      
-    // set a minimum and maximum scale value
-    worldScale = Phaser.Math.clamp(worldScale, 0.4, 1.2);
-    
-    // set our world scale
-    game.world.scale.set(worldScale);
-    
-    /* Note: screen width including scaling is (game.width/worldScale)  */
-    var screenSizeScaled = new Phaser.Point(game.width/worldScale,
-                                            game.height/worldScale);
-
-
-    /* work out camera offset, based on Scale, and camera coords are for top left of camera */
-    /* Camera middle - half screen width, allowing for scaling of screen too */
-    game.world.pivot.x = cameraMidPos.x - (screenSizeScaled.x /2);
-    game.world.pivot.y = cameraMidPos.y - (screenSizeScaled.y /2);
-    /* Limit camera to world bounds */
-    game.world.pivot.x = Phaser.Math.clamp(game.world.pivot.x, level.x, level.x2 - screenSizeScaled.x);
-    game.world.pivot.y = Phaser.Math.clamp(game.world.pivot.y, level.y, level.y2 - screenSizeScaled.y);
-    
-    //this.game.camera.focusOnXY(cameraMidPos.x, cameraMidPos.y);
-
-    
-    /******** Parallax Background **********************************/
-    /* Work out Camera Middle again, but this time it will include any Clamping */
-    var newCamMid = new Phaser.Point(game.world.pivot.x + (screenSizeScaled.x /2),
-                                     game.world.pivot.y + (screenSizeScaled.y /2));
-
-    var bgPercent = level.bgPercent;
-    /** A percentage of the main screen Scale will be the Backgrounds scale.
-     ** small values = slow, distant looking background */
-    var bgScale =  (1/worldScale) * reduceAScale(worldScale, bgPercent);
-    /* the (1/worldscale) effectively cancels out the worldscale already in the translation */
-    this.bg.scale.set(  bgScale  );
-    
-    var bgOffset = level.bgOffset;
-
-    this.bg.position.set(newCamMid.x /* start from screen middle, this value doesnt get scaled */
-                          -(( (newCamMid.x*bgPercent) +bgOffset.x ) *bgScale),
-                       /* take off to pull bg to the left:
-                        *  a small percentage of camera position, so it moves slower
-                        *  add an offset to account for the black on left and top edges,
-                        *  then multiply by the backgrounds scale from above */
-                        
-                        (newCamMid.y) /* same for Y */
-                          -(( (newCamMid.y*bgPercent)+bgOffset.y ) * bgScale) );
-
-    function reduceAScale(scale, ratio) {
-      return ((scale-1)*ratio) +1;
-    }
-    
+    updateMyCam(this);
    
    
-    /********** Joystick *******************************************/
+    /********** Joystick ***************************************/
     /* position joystick in screen coords, rather than world coords. */
     var p = screenToWorld( { x:60, y:game.height-60 } );
     this.joystick.x = p.x; this.joystick.y = p.y;
@@ -342,10 +147,12 @@ BasicGame.Boot.prototype =
                       +"myCam "+game.world.pivot.x.toFixed(0)+","+game.world.pivot.y.toFixed(0)+" "
                       //+game.player.x+","+game.player.y+" "
                       +"scale "+worldScale.toFixed(2)+" "
-                      +"player "+this.player.x.toFixed(0)+","+this.player.y.toFixed(0)
+                      +"player "+player.x.toFixed(0)+","+player.y.toFixed(0)
+                      +" gun "+gun.angle.toFixed(0)+","+gun.power.toFixed(0)
                       || '--', 2, 14, "#00ff00");   
   }
 };
+
 /***************************** Functions **********************************************/
 function pointerOnDown(p) {
   var w=screenToWorld(p);
@@ -354,12 +161,13 @@ function pointerOnDown(p) {
   console.log("down "+p.x+","+p.y+" myWorld "+w.x.toFixed(0)+","+w.y.toFixed(0));
   
   if (Math.abs( s.distance(centre) ) < 60 ) {
-    /* the press is in our joystick */
+    /* theve pressed our joystick */
     game.input.addMoveCallback(pointerOnMove, this);
     console.log("in the joystick");
     this.joystick.pointerId = p.id;
     this.joystick.start = s; /* store the starting press position, (in screen coords) */
     this.joystick.centre = centre;
+    this.joystick.last = new Phaser.Point(s.x, s.y); /* init the position it was last time */
   }
 }
 function pointerOnMove(p) {
@@ -369,14 +177,24 @@ function pointerOnMove(p) {
   if (p.id == this.joystick.pointerId) {
     var start=this.joystick.start;
     var centre=this.joystick.centre;
+    var last = this.joystick.last;
     
     var dist = start.distance(s);
     var deltaX = s.x - start.x;
     var deltaY = s.y - start.y;
-    deltaX = (deltaX / 60) * this.player.speed;
-    deltaY = (deltaY / 60) * this.player.speed;
-    this.player.body.velocity.x = deltaX;
-    this.player.body.velocity.y = deltaY;
+    deltaX = (deltaX / 60) * player.speed;
+    deltaY = (deltaY / 60) * player.speed;
+    //this.player.body.velocity.x = deltaX;
+    //this.player.body.velocity.y = deltaY;
+    //this.gun.angleVelocity += deltaX/4000;
+    //this.gun.powerVelocity += -deltaY/1000;
+    var lastDeltaX = s.x - last.x;
+    var lastDeltaY = s.y - last.y;
+    gun.angle += lastDeltaX * 0.50;
+    gun.power -= lastDeltaY * 2;
+    //gun.angle = Phaser.math.clamp(Phaser.Math.wrapAngle(gun.angle), -135, 135);
+    //gun.power = Phaser.Math.clamp(gun.power, 90, 1000);
+    this.joystick.last = s;
   }
 }
 
@@ -386,8 +204,10 @@ function pointerOnUp(p) {
   if (p.id == this.joystick.pointerId) {
     game.input.deleteMoveCallback(pointerOnMove, this);
     this.joystick.pointerId = null;
-    this.player.body.velocity.x = 0;
-    this.player.body.velocity.y = 0;
+    //this.player.body.velocity.x = 0;
+    //this.player.body.velocity.y = 0;
+    //this.gun.angleVelocity =0;
+    //this.gun.powerVelocity =0;
   }
 }
 
@@ -409,37 +229,7 @@ function screenToWorldScale(s) {
   return (1/worldScale) * s;
 }
 
-function checkBulletsToLand(bullets, bitmap) {
-  var over=0;
-  bullets.forEachExists(function(bullet,bitmap) {
-    var x = Math.floor(bullet.x);
-    var y = Math.floor(bullet.y);
-    /* quick hack for screen zoom out trigger */
-    if (x > 600) { setWorldScale(2); over=1;}
-    if (bitmap){
-      var rgba = bitmap.getPixel(x, y);
-      //console.log( "rgba rga "+rgba.r+" "+rgba.g+" "+rgba.a );
-      if (rgba.a > 0) {
-        /* Erase a Circle in the land to make a crater */
-        bitmap.blendDestinationOut();
-        bitmap.circle(bullet.lastX, bullet.lastY, 16);
-        bitmap.blendReset();
-        bitmap.update();
-        bitmap.dirty = true;
-        bullet.kill();
-      }
-    }
-    bullet.lastX = x;
-    bullet.lastY = y;
-  }, this, bitmap);
-  if (over==0 & bullets.lastOver==1) {
-      setTimeout(function(){
-        setWorldScale(1);
-      }, 2000);
-  }
-  bullets.lastOver=over;
-  
-}
+
 function setWorldScale( i ) {
   if (i==1) worldScaleTarget=1.0; /* zoomed in on base */
   if (i==2) worldScaleTarget=0.59; /* zoomed out for firing */
