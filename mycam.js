@@ -23,7 +23,6 @@ function updateMyCam(th) {
   
     /********** My Camera **************************************/
    
-
     /* calc middle point of camera in world coords */
     cameraMidPos.x += (player.x - cameraMidPos.x) * lerp; /* find the screen middle in World */
     cameraMidPos.y += (player.y - cameraMidPos.y) * lerp;
@@ -67,11 +66,11 @@ function updateMyCam(th) {
      ** small values = slow, distant looking background */
     var bgScale =  (1/worldScale) * reduceAScale(worldScale, bgPercent);
     /* the (1/worldscale) effectively cancels out the worldscale already in the translation */
-    this.bg.scale.set(  bgScale  );
+    background.scale.set(  bgScale  );
     
     var bgOffset = level.bgOffset;
 
-    this.bg.position.set(newCamMid.x /* start from screen middle, this value doesnt get scaled */
+    background.position.set(newCamMid.x /* start from screen middle, this value doesnt get scaled */
                           -(( (newCamMid.x*bgPercent) +bgOffset.x ) *bgScale),
                        /* take off to pull bg to the left:
                         *  a small percentage of camera position, so it moves slower

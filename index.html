@@ -23,7 +23,7 @@ BasicGame.Boot = function (game) {
 
 /********  Game Variable Declarations  *****************************************/
 /*******************************************************************************/
-
+var background;
 
 
 var level = {  /* Settings for this particular level in the game */
@@ -59,10 +59,10 @@ BasicGame.Boot.prototype =
     game.physics.arcade.gravity.y = 200;
     
     /******* Parallax Background ********/
-    this.bg = game.add.sprite(0, 0, 'background');
-    //this.bg.fixedToCamera = true;
-    //this.bg.tileScale.set(0.5);
-    //this.bg.tint = 0x660000;
+    background = game.add.sprite(0, 0, 'background');
+    //background.fixedToCamera = true;
+    //background.tileScale.set(0.5);
+    //background.tint = 0x660000;
 
     /*****  Foreground (Land) **********/    
     createLand(this);
