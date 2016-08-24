@@ -2,21 +2,23 @@
 
 /***** My Camera initialisation **********/
 var cameraMidPos = new Phaser.Point(0, 0);  /* my camera */
-var worldScale = 1.2;   /* right at game begining, this 1.2 will cause a slow zoom out to 1.0 */
+var worldScale = 1.3;   /* right at game begining, this 1.2 will cause a slow zoom out to 1.0 */
 var worldScaleTarget = 1.0;
 var lerp = 0.1;        // Camera movement amount of damping, lower values = smoother camera movement
 var scaleLerp = 0.05;  /* amount of damping on scale changes */
 
 var lastScaleModeRequest=1;
 var scaleModeTimeout=null;
-
+var scaleMode=1;
+var screenBottomTarget;
 
 function createMyCam(th) {
   
     /****** My Camera *****************/
     cameraMidPos.setTo(player.x, player.y);
     //this.game.camera.reset();
-    //worldScale = 1.20; /* begin with camera slowly zooming out for drama */
+    setWorldScale( 1 /*Mode 1*/ );
+    worldScale=1.3;
 }
 
 function updateMyCam(th) {
@@ -35,7 +37,7 @@ function updateMyCam(th) {
       worldScale += scaleDif * scaleLerp;/* 0.05 Scale lerp */
       
     // set a minimum and maximum scale value
-    worldScale = Phaser.Math.clamp(worldScale, 0.4, 1.2);
+    worldScale = Phaser.Math.clamp(worldScale, 0.4, 1.3);
     
     // set our world scale
     game.world.scale.set(worldScale);
@@ -52,6 +54,13 @@ function updateMyCam(th) {
     /* Limit camera to world bounds */
     game.world.pivot.x = Phaser.Math.clamp(game.world.pivot.x, level.x, level.x2 - screenSizeScaled.x);
     game.world.pivot.y = Phaser.Math.clamp(game.world.pivot.y, level.y, level.y2 - screenSizeScaled.y);
+    
+    /* ease gentle up if the screen is showing too low.  No one wants the screen filled with ground! */
+    var screenBottom = game.world.pivot.y + screenSizeScaled.y;
+    var dif=screenBottom - screenBottomTarget;
+    if (dif > 0) {
+      cameraMidPos.y -= (dif * (lerp*2.0));
+    }
     
     //this.game.camera.focusOnXY(cameraMidPos.x, cameraMidPos.y);
 
@@ -82,6 +91,16 @@ function updateMyCam(th) {
 
 }
 
+
+function setWorldScale( i ) {
+  scaleMode = i;
+  if (i==1){worldScaleTarget=1.0; /* zoomed in on base */
+             screenBottomTarget=730; }
+  if (i==2){worldScaleTarget=0.59; /* zoomed out for firing */
+               screenBottomTarget=960; }
+  if (i==3){worldScaleTarget=0.48; /* extended zoom out - for distance firing */
+               screenBottomTarget=960; }
+}
 
 
 

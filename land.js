@@ -36,6 +36,8 @@ function updateLand(th) {
     layer.destroy();
     game.world.bringToTop(th.joystick);
     game.world.bringToTop(th.button);
+    game.world.bringToTop(drawButton);
   }
+  
   
 }

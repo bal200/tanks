@@ -24,7 +24,12 @@ BasicGame.Boot = function (game) {
 /********  Game Variable Declarations  *****************************************/
 /*******************************************************************************/
 var background;
-
+var drawButton;
+var drawMode = false;
+var drawing = {
+  lastPos:null,
+  pointerId:null
+}
 
 var level = {  /* Settings for this particular level in the game */
   x:0,  y:-1024,  /* world size */
@@ -45,6 +50,7 @@ BasicGame.Boot.prototype =
     game.load.image("bullet", "assets/bullet.png");
     game.load.image("trace", "assets/trace.png");
     game.load.image("joystick", "assets/joystick.png");
+    game.load.image("pencil", "assets/pencil.png");
     
     game.load.tilemap('tilemap', 'assets/tilemap2.json', null, Phaser.Tilemap.TILED_JSON);
     game.load.image('jungletileset', 'assets/jungletileset_32x32.png');
@@ -55,6 +61,9 @@ BasicGame.Boot.prototype =
   /*****************************************************************************/
 	create: function() 
 	{
+    //game.scale.fullScreenScaleMode = Phaser.ScaleManager.RESIZE;
+    //game.scale.scaleMode = Phaser.ScaleManager.RESIZE;
+
     game.physics.startSystem(Phaser.Physics.ARCADE);
     game.physics.arcade.gravity.y = 200;
     
@@ -70,12 +79,13 @@ BasicGame.Boot.prototype =
     /******* Player ********************/
     createPlayer(this);
     
-    
     /************ Bullets *****************/
     createBullets(this);
     
+    
     /****** Joystick ******************/
     this.joystick = game.add.group();
+    this.joystick.method=3;
     //var joyGraph = game.add.graphics();
     //joyGraph.beginFill(0x888899, 0.9);
     //joyGraph.drawCircle(0,0 , 120);
@@ -93,6 +103,12 @@ BasicGame.Boot.prototype =
     this.button.alpha = 0.4;
     this.button.scale.set(screenToWorldScale(0.6));
     this.button.anchor.set(0.5,0.5);
+    
+    //drawButton = game.add.group();
+    drawButton = game.add.button(0,0, 'pencil', drawPress, this,0,0,0);
+    drawButton.alpha = 0.6;
+    //drawButton.scale.setTo(screenToWorldScale(0.1));
+    drawButton.anchor.setTo(0.5,0.5);
     
     
     game.world.bringToTop(this.joystick);
@@ -116,9 +132,10 @@ BasicGame.Boot.prototype =
     updatePlayer(this);
 
     /************ Gun *****************************************/
-    //gun.angle += gun.angleVelocity;
-    //gun.power += gun.powerVelocity;
-    
+    if (this.joystick.method==1) {
+      gun.angle += gun.angleVelocity;
+      gun.power += gun.powerVelocity;
+    }
     /********** Foreground ************************************/
     updateLand(this);
 
@@ -135,9 +152,13 @@ BasicGame.Boot.prototype =
     this.joystick.x = p.x; this.joystick.y = p.y;
     this.joystick.scale.set(screenToWorldScale(1));
     
-    var p = screenToWorld( { x:game.width-60, y:game.height-60 } );
+    p = screenToWorld( { x:game.width-60, y:game.height-60 } );
     this.button.x = p.x; this.button.y = p.y;
     this.button.scale.set(screenToWorldScale(0.6));
+    
+    p = screenToWorld( { x:60, y:game.height-180 } );
+    drawButton.x = p.x; drawButton.y = p.y;
+    drawButton.scale.set(screenToWorldScale(0.12));
     
   }, 
   render: function()
@@ -145,57 +166,102 @@ BasicGame.Boot.prototype =
       game.debug.text(game.time.fps+"fps "
                       +"cam "+game.camera.x+","+game.camera.y+" "
                       +"myCam "+game.world.pivot.x.toFixed(0)+","+game.world.pivot.y.toFixed(0)+" "
-                      //+game.player.x+","+game.player.y+" "
                       +"scale "+worldScale.toFixed(2)+" "
                       +"player "+player.x.toFixed(0)+","+player.y.toFixed(0)
-                      +" gun "+gun.angle.toFixed(0)+","+gun.power.toFixed(0)
+                      +" gun "+gun.angle.toFixed(0)+"a "+gun.power.toFixed(0)+"p"
                       || '--', 2, 14, "#00ff00");   
   }
 };
 
 /***************************** Functions **********************************************/
+function drawPress() {
+  if(drawMode == false)  {drawMode=true; drawButton.alpha=0.9}
+  else  {drawMode=false; drawButton.alpha=0.6}
+}
+
 function pointerOnDown(p) {
   var w=screenToWorld(p);
   var s=new Phaser.Point(p.x, p.y);
   var centre=new Phaser.Point(60, game.height-60);
   console.log("down "+p.x+","+p.y+" myWorld "+w.x.toFixed(0)+","+w.y.toFixed(0));
   
-  if (Math.abs( s.distance(centre) ) < 60 ) {
+  if (Math.abs( s.distance(centre) ) < 60 ) { /* in the joystick */
     /* theve pressed our joystick */
     game.input.addMoveCallback(pointerOnMove, this);
     console.log("in the joystick");
     this.joystick.pointerId = p.id;
     this.joystick.start = s; /* store the starting press position, (in screen coords) */
     this.joystick.centre = centre;
-    this.joystick.last = new Phaser.Point(s.x, s.y); /* init the position it was last time */
+    this.joystick.last = new Phaser.Point(s.x, s.y); /* the position it was last time */
+    this.joystick.lastAngle = Phaser.Math.radToDeg(
+                   Phaser.Math.angleBetweenPoints(centre, s)); /* the angle of this press */
+    this.joystick.lastDist = centre.distance( s ); /* distance from the circles centre */
+  }else {
+    if (drawMode==true){ /* the drawing a base on the screen mode is on */
+      drawing.lastPos=w;
+      game.input.addMoveCallback(pointerOnMove, this);
+      drawing.pointerId = p.id;
+    }
   }
 }
 function pointerOnMove(p) {
   var w=screenToWorld(p);
   var s=new Phaser.Point(p.x, p.y);
-  console.log("Move "+p.x+","+p.y+" myWorld "+w.x.toFixed(0)+","+w.y.toFixed(0));
+  //console.log("Move "+p.x+","+p.y+" myWorld "+w.x.toFixed(0)+","+w.y.toFixed(0));
   if (p.id == this.joystick.pointerId) {
     var start=this.joystick.start;
     var centre=this.joystick.centre;
     var last = this.joystick.last;
     
-    var dist = start.distance(s);
-    var deltaX = s.x - start.x;
-    var deltaY = s.y - start.y;
-    deltaX = (deltaX / 60) * player.speed;
-    deltaY = (deltaY / 60) * player.speed;
-    //this.player.body.velocity.x = deltaX;
-    //this.player.body.velocity.y = deltaY;
-    //this.gun.angleVelocity += deltaX/4000;
-    //this.gun.powerVelocity += -deltaY/1000;
-    var lastDeltaX = s.x - last.x;
-    var lastDeltaY = s.y - last.y;
-    gun.angle += lastDeltaX * 0.50;
-    gun.power -= lastDeltaY * 2;
-    //gun.angle = Phaser.math.clamp(Phaser.Math.wrapAngle(gun.angle), -135, 135);
-    //gun.power = Phaser.Math.clamp(gun.power, 90, 1000);
+    if (this.joystick.method==1) {
+      var dist = start.distance(s);
+      var deltaX = s.x - start.x;
+      var deltaY = s.y - start.y;
+      deltaX = (deltaX / 60) * player.speed;
+      deltaY = (deltaY / 60) * player.speed;
+      //this.player.body.velocity.x = deltaX;
+      //this.player.body.velocity.y = deltaY;
+      this.gun.angleVelocity += deltaX/4000;
+      this.gun.powerVelocity += -deltaY/1000;
+    }
+    if (this.joystick.method==2) {
+      var lastDeltaX = s.x - last.x;
+      var lastDeltaY = s.y - last.y;
+      gun.angle += lastDeltaX * 0.50;
+      gun.power -= lastDeltaY * 2;
+    }
+    if (this.joystick.method==3) {
+      var angle = Phaser.Math.radToDeg(Phaser.Math.angleBetweenPoints(centre, s));
+      var dist = centre.distance( s );
+      
+      if (dist > 20)
+        gun.angle += (angle - this.joystick.lastAngle);
+      gun.power += (dist - this.joystick.lastDist) *6;
+      
+      this.joystick.lastAngle = angle;      
+      this.joystick.lastDist = dist;
+    }
+    //Phaser.Math.wrapAngle();
+    //gun.angle = Phaser.math.clamp(gun.angle, -135, 135);
+    if (gun.angle>135) gun.angle = 135;
+    if (gun.angle<-135) gun.angle = -135;
+    gun.power = Phaser.Math.clamp(gun.power, 90, 1000);
+    
     this.joystick.last = s;
   }
+  
+  
+  if (p.id == drawing.pointerId) {
+    if (drawing.lastPos!=null){
+      bitmap.circle(w.x, w.y, 8, '#B020D0');
+      bitmap.update();
+      bitmap.dirty = true;
+        
+      drawing.lastPos.x=w.x; drawing.lastPos.y=w.y;
+    }
+    
+  }
+  
 }
 
 function pointerOnUp(p) {
@@ -208,6 +274,10 @@ function pointerOnUp(p) {
     //this.player.body.velocity.y = 0;
     //this.gun.angleVelocity =0;
     //this.gun.powerVelocity =0;
+  }
+  if (p.id == drawing.pointerId) {
+    drawing.pointerId = null;
+    game.input.deleteMoveCallback(pointerOnMove, this);
   }
 }
 
@@ -229,12 +299,6 @@ function screenToWorldScale(s) {
   return (1/worldScale) * s;
 }
 
-
-function setWorldScale( i ) {
-  if (i==1) worldScaleTarget=1.0; /* zoomed in on base */
-  if (i==2) worldScaleTarget=0.59; /* zoomed out for firing */
-  if (i==3) worldScaleTarget=0.48; /* extended zoom out - for distance firing */
-}
 
 
 game.state.add('Boot', BasicGame.Boot);

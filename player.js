@@ -6,9 +6,9 @@ var firebutton; /* space bar */
 /************ Gun *****************/
 gun = {
   angle : 45,
-  //angleVelocity:0,
-  power : 300
-  //powerVelocity:0
+  angleVelocity:0,
+  power : 300,
+  powerVelocity:0
 }
 
 /************ Player ********************************/
