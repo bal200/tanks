@@ -127,6 +127,7 @@ function updateBullets(th) {
 function fire(th) {
 //if (game.time.now > bulletTime)
 //{
+    drawOff(); /* turn off drawing mode no were shootin' */
     var bullet = bullets.getFirstExists(false);
     if (bullet) {
       var vec = new Phaser.Point(0,-1);

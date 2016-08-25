@@ -178,6 +178,9 @@ function drawPress() {
   if(drawMode == false)  {drawMode=true; drawButton.alpha=0.9}
   else  {drawMode=false; drawButton.alpha=0.6}
 }
+function drawOff(){
+  drawMode=false; drawButton.alpha=0.6;
+}
 
 function pointerOnDown(p) {
   var w=screenToWorld(p);
@@ -249,15 +252,16 @@ function pointerOnMove(p) {
     
     this.joystick.last = s;
   }
-  
-  
   if (p.id == drawing.pointerId) {
     if (drawing.lastPos!=null){
-      bitmap.circle(w.x, w.y, 8, '#B020D0');
-      bitmap.update();
-      bitmap.dirty = true;
-        
-      drawing.lastPos.x=w.x; drawing.lastPos.y=w.y;
+      if (w.distance( drawing.lastPos ) > 10) {
+        //bitmap.circle(w.x, w.y, 8, '#B020D0');
+        bitmap.line(drawing.lastPos.x,drawing.lastPos.y, w.x, w.y, '#B020D0',  10);
+        bitmap.update();
+        bitmap.dirty = true;
+          
+        drawing.lastPos.x=w.x; drawing.lastPos.y=w.y;
+      }
     }
     
   }
