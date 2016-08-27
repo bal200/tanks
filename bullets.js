@@ -5,6 +5,7 @@
 var bulletTime=0;
 var bullets;
 var trace;
+var traceOn=false;
 
 function createBullets(th) {
 
@@ -54,7 +55,7 @@ function updateBullets(th) {
   
   
   /********** Trace Lines ************************************/
-  if (bitmap) {
+  if (bitmap && traceOn) {
     /* this will animate the trace line, by slightly moving the start point every second */
     var startNudge = 4+ ((new Date).getSeconds() % 2) * 10;
     
@@ -74,17 +75,17 @@ function updateBullets(th) {
       p.x += deltaX;
       p.y += deltaY;
     }while(Math.abs(last.distance(p)) < startNudge);
-    for (n=0; n<100; n++) {
-      var t = trace.next();
+    for (n=0; n<100; n++) { /* go through each of the trace dots */
+      var t = trace.next(); /* t is our next trace dot sprite */
       if (collision){
-        t.exists=false; //t.visible=false;
+        t.exists=false; //t.visible=false; /* we're finished, but we still must erase all the remaining dots */
         
       }else{
-        t.reset(p.x, p.y);
+        t.reset(p.x, p.y); /* place the next dot on the line */
         t.angle = Phaser.Math.radToDeg(
                     Phaser.Math.angleBetween(0,0, deltaX, deltaY));
         last.x=p.x; last.y=p.y;
-        do{
+        do{ /* an inner loop, to slowly step along the line until we advance 20 pixels, ready for next dot */
           deltaY += (game.physics.arcade.gravity.y / 100)/100;
           p.x += deltaX;
           p.y += deltaY;
@@ -96,15 +97,17 @@ function updateBullets(th) {
     }
     
     /* jump to different zoom points, depending on where the trace marks are pointing */
-    if (p.x > 800) changeWorldScale=2;
-    if (p.x > 1400) changeWorldScale=3;
-    if (changeWorldScale==2) {
+    var newScale=1;
+    if (p.x > 800) newScale=2;
+    if (p.x > 1600 && p.y<970) newScale=3;
+    changeScaleMode(newScale);
+/*    if (newScale==2) {
       if(trace.lastWorldScale==1) {
         setWorldScale(2);
         if (trace.changeWorldScaleTimeout) clearTimeout(trace.changeWorldScaleTimeout);
       }
       trace.lastWorldScale=2;
-    }else if (changeWorldScale==3) {
+    }else if (newScale==3) {
       if(trace.lastWorldScale==1) {
         setWorldScale(2);
         if (trace.changeWorldScaleTimeout) clearTimeout(trace.changeWorldScaleTimeout);
@@ -119,6 +122,7 @@ function updateBullets(th) {
       }
       trace.lastWorldScale=1;
     }
+*/
   }
   
 }
@@ -127,7 +131,8 @@ function updateBullets(th) {
 function fire(th) {
 //if (game.time.now > bulletTime)
 //{
-    drawOff(); /* turn off drawing mode no were shootin' */
+    drawOff(); /* turn off drawing mode now were shootin' */
+    if (joystick.pointerId==null)  turnTraceOff(); /* get rid of the trace lines now too */
     var bullet = bullets.getFirstExists(false);
     if (bullet) {
       var vec = new Phaser.Point(0,-1);
@@ -145,11 +150,13 @@ function fire(th) {
 /* check through the group of bullets to see if any have hit our foreground land,
  *  using the bitmap getPixel command to look for solid ground */
 function checkBulletsToLand(bullets, bitmap) {
-  var over=0;
+  var over=1;
   bullets.forEachExists(function(bullet,bitmap) {
     var x = Math.floor(bullet.x);
     var y = Math.floor(bullet.y);
-    /* quick hack for screen zoom out trigger */
+    /* screen zoom out trigger */
+    over=checkBulletForCameraMove(x,y);
+    //if (x > 600) { setWorldScale(2); over=1;}
     //if (x > 600) { setWorldScale(2); over=1;}
     if (bitmap){
       var rgba = bitmap.getPixel(x, y);
@@ -168,6 +175,8 @@ function checkBulletsToLand(bullets, bitmap) {
     bullet.lastX = x;
     bullet.lastY = y;
   }, this, bitmap);
+  changeScaleMode(over);
+  
   //if (over==0 & bullets.lastOver==1) {
   //    setTimeout(function(){
   //      setWorldScale(1);
@@ -176,3 +185,16 @@ function checkBulletsToLand(bullets, bitmap) {
   //bullets.lastOver=over;
   
 }
+
+function turnTraceOn() {
+  traceOn=true;
+}
+function turnTraceOff() {
+  if (traceOn==false) return;
+  for (n=0; n<100; n++) { 
+    var t = trace.next(); 
+    t.exists=false; 
+  }
+  traceOn=false;
+}
+

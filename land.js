@@ -34,7 +34,7 @@ function updateLand(th) {
     foreground = game.add.image(0, 0, bitmap);
     bitmap.update();
     layer.destroy();
-    game.world.bringToTop(th.joystick);
+    game.world.bringToTop(joystick);
     game.world.bringToTop(th.button);
     game.world.bringToTop(drawButton);
   }

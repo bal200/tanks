@@ -7,7 +7,7 @@ var firebutton; /* space bar */
 gun = {
   angle : 45,
   angleVelocity:0,
-  power : 300,
+  power : 220,
   powerVelocity:0
 }
 
@@ -16,7 +16,7 @@ gun = {
 function createPlayer (th) {
   
     /******* Player ********************/
-    player = game.add.sprite(300,450,'star'); //game.add.group();
+    player = game.add.sprite(300,550,'star'); //game.add.group();
     player.speed = 400;
     player.anchor.set(0.5, 0.5);
     //this.player.x=430; this.player.y=400;

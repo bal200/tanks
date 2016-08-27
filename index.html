@@ -31,6 +31,8 @@ var drawing = {
   pointerId:null
 }
 
+var joystick, joystickBack;
+
 var level = {  /* Settings for this particular level in the game */
   x:0,  y:-1024,  /* world size */
   x2:2048, y2:2048,
@@ -84,19 +86,19 @@ BasicGame.Boot.prototype =
     
     
     /****** Joystick ******************/
-    this.joystick = game.add.group();
-    this.joystick.method=3;
+    joystick = game.add.group();
+    joystick.method=3;
     //var joyGraph = game.add.graphics();
     //joyGraph.beginFill(0x888899, 0.9);
     //joyGraph.drawCircle(0,0 , 120);
     //this.joystick.add(joyGraph);
     //this.joystickBack = game.add.button(0, 0, 'joystick', nothing, this, 2, 1, 0);
-    this.joystickBack = game.add.sprite(0,0, 'joystick');
-    this.joystickBack.alpha = 0.4;
-    this.joystickBack.anchor.set(0.5,0.5);
-    //this.joystickBack.inputEnabled = true;
-    //this.joystickBack.events.onInputDown.add(pointerOnDown, this);
-    this.joystick.add( this.joystickBack );
+    joystickBack = game.add.sprite(0,0, 'joystick');
+    joystickBack.alpha = 0.4;
+    joystickBack.anchor.set(0.5,0.5);
+    //joystickBack.inputEnabled = true;
+    //joystickBack.events.onInputDown.add(pointerOnDown, this);
+    joystick.add( joystickBack );
     /* button */
     this.button = game.add.group();
     this.button = game.add.button(0,0, 'joystick', fire, this,0,0,0);
@@ -111,7 +113,7 @@ BasicGame.Boot.prototype =
     drawButton.anchor.setTo(0.5,0.5);
     
     
-    game.world.bringToTop(this.joystick);
+    game.world.bringToTop(joystick);
     /* Touch screen event handlers */
     game.input.onDown.add(pointerOnDown, this);
     game.input.onUp.add(pointerOnUp, this);
@@ -132,7 +134,7 @@ BasicGame.Boot.prototype =
     updatePlayer(this);
 
     /************ Gun *****************************************/
-    if (this.joystick.method==1) {
+    if (joystick.method==1) {
       gun.angle += gun.angleVelocity;
       gun.power += gun.powerVelocity;
     }
@@ -149,8 +151,8 @@ BasicGame.Boot.prototype =
     /********** Joystick ***************************************/
     /* position joystick in screen coords, rather than world coords. */
     var p = screenToWorld( { x:60, y:game.height-60 } );
-    this.joystick.x = p.x; this.joystick.y = p.y;
-    this.joystick.scale.set(screenToWorldScale(1));
+    joystick.x = p.x; joystick.y = p.y;
+    joystick.scale.set(screenToWorldScale(1));
     
     p = screenToWorld( { x:game.width-60, y:game.height-60 } );
     this.button.x = p.x; this.button.y = p.y;
@@ -174,9 +176,10 @@ BasicGame.Boot.prototype =
 };
 
 /***************************** Functions **********************************************/
-function drawPress() {
+function drawPress() { /* the drawing pencil button pressed */
   if(drawMode == false)  {drawMode=true; drawButton.alpha=0.9}
   else  {drawMode=false; drawButton.alpha=0.6}
+  turnTraceOff();
 }
 function drawOff(){
   drawMode=false; drawButton.alpha=0.6;
@@ -192,13 +195,14 @@ function pointerOnDown(p) {
     /* theve pressed our joystick */
     game.input.addMoveCallback(pointerOnMove, this);
     console.log("in the joystick");
-    this.joystick.pointerId = p.id;
-    this.joystick.start = s; /* store the starting press position, (in screen coords) */
-    this.joystick.centre = centre;
-    this.joystick.last = new Phaser.Point(s.x, s.y); /* the position it was last time */
-    this.joystick.lastAngle = Phaser.Math.radToDeg(
+    joystick.pointerId = p.id;
+    joystick.start = s; /* store the starting press position, (in screen coords) */
+    joystick.centre = centre;
+    joystick.last = new Phaser.Point(s.x, s.y); /* the position it was last time */
+    joystick.lastAngle = Phaser.Math.radToDeg(
                    Phaser.Math.angleBetweenPoints(centre, s)); /* the angle of this press */
-    this.joystick.lastDist = centre.distance( s ); /* distance from the circles centre */
+    joystick.lastDist = centre.distance( s ); /* distance from the circles centre */
+    turnTraceOn(); /* show the trace lines now were aiming the gun */
   }else {
     if (drawMode==true){ /* the drawing a base on the screen mode is on */
       drawing.lastPos=w;
@@ -211,12 +215,12 @@ function pointerOnMove(p) {
   var w=screenToWorld(p);
   var s=new Phaser.Point(p.x, p.y);
   //console.log("Move "+p.x+","+p.y+" myWorld "+w.x.toFixed(0)+","+w.y.toFixed(0));
-  if (p.id == this.joystick.pointerId) {
-    var start=this.joystick.start;
-    var centre=this.joystick.centre;
-    var last = this.joystick.last;
+  if (p.id == joystick.pointerId) {
+    var start=joystick.start;
+    var centre=joystick.centre;
+    var last = joystick.last;
     
-    if (this.joystick.method==1) {
+    if (joystick.method==1) {
       var dist = start.distance(s);
       var deltaX = s.x - start.x;
       var deltaY = s.y - start.y;
@@ -227,30 +231,30 @@ function pointerOnMove(p) {
       this.gun.angleVelocity += deltaX/4000;
       this.gun.powerVelocity += -deltaY/1000;
     }
-    if (this.joystick.method==2) {
+    if (joystick.method==2) {
       var lastDeltaX = s.x - last.x;
       var lastDeltaY = s.y - last.y;
       gun.angle += lastDeltaX * 0.50;
       gun.power -= lastDeltaY * 2;
     }
-    if (this.joystick.method==3) {
+    if (joystick.method==3) {
       var angle = Phaser.Math.radToDeg(Phaser.Math.angleBetweenPoints(centre, s));
       var dist = centre.distance( s );
       
       if (dist > 20)
-        gun.angle += (angle - this.joystick.lastAngle);
-      gun.power += (dist - this.joystick.lastDist) *6;
+        gun.angle += (angle - joystick.lastAngle);
+      gun.power += (dist - joystick.lastDist) *6;
       
-      this.joystick.lastAngle = angle;      
-      this.joystick.lastDist = dist;
+      joystick.lastAngle = angle;      
+      joystick.lastDist = dist;
     }
     //Phaser.Math.wrapAngle();
     //gun.angle = Phaser.math.clamp(gun.angle, -135, 135);
     if (gun.angle>135) gun.angle = 135;
     if (gun.angle<-135) gun.angle = -135;
-    gun.power = Phaser.Math.clamp(gun.power, 90, 1000);
+    gun.power = Phaser.Math.clamp(gun.power, 90, 850);
     
-    this.joystick.last = s;
+    joystick.last = s;
   }
   if (p.id == drawing.pointerId) {
     if (drawing.lastPos!=null){
@@ -271,9 +275,9 @@ function pointerOnMove(p) {
 function pointerOnUp(p) {
   var w=screenToWorld(p);
   console.log("up "+p.x+","+p.y+" myWorld "+w.x.toFixed(0)+","+w.y.toFixed(0));
-  if (p.id == this.joystick.pointerId) {
+  if (p.id == joystick.pointerId) {
     game.input.deleteMoveCallback(pointerOnMove, this);
-    this.joystick.pointerId = null;
+    joystick.pointerId = null;
     //this.player.body.velocity.x = 0;
     //this.player.body.velocity.y = 0;
     //this.gun.angleVelocity =0;

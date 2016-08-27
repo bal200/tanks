@@ -2,15 +2,16 @@
 
 /***** My Camera initialisation **********/
 var cameraMidPos = new Phaser.Point(0, 0);  /* my camera */
-var worldScale = 1.3;   /* right at game begining, this 1.2 will cause a slow zoom out to 1.0 */
+var worldScale = 1.3;   /* right at game begining, this 1.3 will cause a slow zoom out to 1.0 */
 var worldScaleTarget = 1.0;
 var lerp = 0.1;        // Camera movement amount of damping, lower values = smoother camera movement
 var scaleLerp = 0.05;  /* amount of damping on scale changes */
 
-var lastScaleModeRequest=1;
-var scaleModeTimeout=null;
+
 var scaleMode=1;
 var screenBottomTarget;
+var scaleModeTimeout=null;
+var scaleModeChangeWaiting=0;
 
 function createMyCam(th) {
   
@@ -91,6 +92,29 @@ function updateMyCam(th) {
 
 }
 
+function changeScaleMode(n) {
+  if (scaleMode == n) return; /* already at the right scale, do nothing */
+  var last = scaleMode;
+  if (n > last) {  /* we're increasing the screen size, do straight away */
+    setWorldScale(n);
+  }else{ /* we're reducing the screen size */
+    if (scaleModeTimeout!=null) { /* already a timeout waiting, update it */
+      scaleModeChangeWaiting = n;
+    }else{ /* no existing timeout, so make one */
+      scaleModeChangeWaiting = n;
+      scaleModeTimeout=setTimeout(function(){ /* reduce the screen size in 3 seconds, little dramatic camera delay :-) */
+        setWorldScale(scaleModeChangeWaiting);
+        scaleModeTimeout=null; scaleModeChangeWaiting=0;
+      }, 3000);
+    }
+  }
+
+}
+function checkBulletForCameraMove(x,y) {
+  if (x > 600) { return(2); }
+  if (x > 1400) { return(3); }
+  return 1;
+}
 
 function setWorldScale( i ) {
   scaleMode = i;
@@ -98,7 +122,7 @@ function setWorldScale( i ) {
              screenBottomTarget=730; }
   if (i==2){worldScaleTarget=0.59; /* zoomed out for firing */
                screenBottomTarget=960; }
-  if (i==3){worldScaleTarget=0.48; /* extended zoom out - for distance firing */
+  if (i==3){worldScaleTarget=0.49; /* extended zoom out - for distance firing */
                screenBottomTarget=960; }
 }
 
