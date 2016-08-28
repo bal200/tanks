@@ -6,6 +6,7 @@ var bulletTime=0;
 var bullets;
 var trace;
 var traceOn=false;
+var explosions;
 
 function createBullets(th) {
 
@@ -38,6 +39,15 @@ function createBullets(th) {
       t.visible = false;
       t.anchor.set(0.5, 0.5);
   }
+  
+  /******* Explosions group ********/
+  explosions = game.add.group();
+  explosions.createMultiple(15, 'boom');
+  explosions.forEach(function(exp) {
+    exp.anchor.x = 0.5; exp.anchor.y = 0.5;
+    exp.animations.add('boom');
+  });
+
 
 }
 
@@ -146,6 +156,11 @@ function fire(th) {
       bullet.body.velocity.y = vec.y * gun.power; 
       bullet.whos=1;/* the player fired it */
       //bulletTime = game.time.now + 200;
+      var angDrift = game.rnd.between(-1, +2);
+      if (angDrift==+2) angDrift=0;
+      console.log("angDrift "+angDrift);
+      gun.angle += angDrift;
+      gun.power += game.rnd.between(-1, +1);
     }
 //}
 }
@@ -166,6 +181,10 @@ function checkBulletsToLand(bullets, bitmap) {
       //var rgba = bitmap.getPixel(x, y);
       //console.log( "rgba rga "+rgba.r+" "+rgba.g+" "+rgba.a );
       if (checkBitmapForHit(bitmap, x,y, bullet.whos) > 0) {
+        if (exp=explosions.getFirstExists(false)) {
+          exp.reset(x, y);
+          exp.play('boom', 30, false, true);
+        }
         /* Erase a Circle in the land to make a crater */
         bitmap.blendDestinationOut();
         bitmap.circle(bullet.lastX, bullet.lastY, 16);

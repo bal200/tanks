@@ -93,7 +93,7 @@ function updatePlayer( th ) {
 /**************** Enemy Tank **********************/
 
 function enemyLogic() {
-  var what = game.rnd.between(0, 5);
+  var what = game.rnd.between(0, 4);
   switch (what) {
     case 1: /* shoot a front shot*/
       enemyFire( game.rnd.between(-40,-60), game.rnd.between(400, 475) );
@@ -102,9 +102,10 @@ function enemyLogic() {
       enemyFire( game.rnd.between(-20, -30), game.rnd.between(520, 540) );
       break; 
     case 3: /* shoot a flurry */
-      enemyFire( game.rnd.between(-20, -30), game.rnd.between(520, 540) );
-      setTimeout( function(){enemyFire( game.rnd.between(-20, -30), game.rnd.between(520, 540) )},150);
-      setTimeout( function(){enemyFire( game.rnd.between(-20, -30), game.rnd.between(520, 540) )},300);
+      var a=game.rnd.between(-20, -30), b=game.rnd.between(520, 550);
+      enemyFire( a, b );
+      setTimeout( function(){enemyFire(game.rnd.between(a+1, a+1),game.rnd.between(b-1,b+1))},150);
+      setTimeout( function(){enemyFire(game.rnd.between(a+1, a+1),game.rnd.between(b-1,b+1))},300);
       break;
     case 4: /* Build defence */
       enemyDrawRandomDefence();
@@ -113,7 +114,7 @@ function enemyLogic() {
       break;
   }
   /* call this func again in a random time */
-  enemyLogicTimeout=setTimeout(enemyLogic, game.rnd.between(100, 2000));
+  enemyLogicTimeout=setTimeout(enemyLogic, game.rnd.between(100, 3000));
 }
 
 function enemyFire(angle, power) {
