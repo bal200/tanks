@@ -22,6 +22,7 @@ function createBullets(th) {
       b.checkWorldBounds = true;
       b.anchor.set(0.5, 0.5);
       b.lastX=0; b.lastY=0;
+      b.whos=0; /* 1=Players, 2=Enemies */
       b.events.onOutOfBounds.add(function(bullet) {
         bullet.kill();
       }, this);
@@ -63,7 +64,7 @@ function updateBullets(th) {
           vec = vec.rotate(0,0, gun.angle, true);
           
                               /* end of gun barrel */
-    var p = new Phaser.Point(player.x +(vec.x*6), player.y +(vec.y*6));
+    var p = new Phaser.Point(player.x +(vec.x*50), player.y +(vec.y*50));
     var last = new Phaser.Point(p.x, p.y);
     var deltaX = (vec.x * gun.power) / 100;
     var deltaY = (vec.y * gun.power) / 100;
@@ -90,8 +91,10 @@ function updateBullets(th) {
           p.x += deltaX;
           p.y += deltaY;
           /* Check for land collision */
-          var rgba = bitmap.getPixel(Math.floor(p.x), Math.floor(p.y));
-          if (rgba.a > 0) collision=true;
+          //var rgba = bitmap.getPixel(Math.floor(p.x), Math.floor(p.y));
+          //if (rgba.a > 0) collision=true;
+          if (checkBitmapForHit(bitmap, Math.floor(p.x), Math.floor(p.y), 1) > 0)
+              collision=true;
         }while(Math.abs(last.distance(p)) < 20);
       }
     }
@@ -138,10 +141,10 @@ function fire(th) {
       var vec = new Phaser.Point(0,-1);
       vec = vec.rotate(0,0, gun.angle, true);
       
-      bullet.reset(player.x + (vec.x*6), player.y + (vec.y*6));
+      bullet.reset(player.x + (vec.x*50), player.y + (vec.y*50));
       bullet.body.velocity.x = vec.x * gun.power;
       bullet.body.velocity.y = vec.y * gun.power; 
-      
+      bullet.whos=1;/* the player fired it */
       //bulletTime = game.time.now + 200;
     }
 //}
@@ -155,13 +158,14 @@ function checkBulletsToLand(bullets, bitmap) {
     var x = Math.floor(bullet.x);
     var y = Math.floor(bullet.y);
     /* screen zoom out trigger */
-    over=checkBulletForCameraMove(x,y);
-    //if (x > 600) { setWorldScale(2); over=1;}
-    //if (x > 600) { setWorldScale(2); over=1;}
+    if (bullet.whos==1) {
+      var o=checkBulletForCameraMove(x,y);
+      if (o>over) over=o;
+    }
     if (bitmap){
-      var rgba = bitmap.getPixel(x, y);
+      //var rgba = bitmap.getPixel(x, y);
       //console.log( "rgba rga "+rgba.r+" "+rgba.g+" "+rgba.a );
-      if (rgba.a > 0) {
+      if (checkBitmapForHit(bitmap, x,y, bullet.whos) > 0) {
         /* Erase a Circle in the land to make a crater */
         bitmap.blendDestinationOut();
         bitmap.circle(bullet.lastX, bullet.lastY, 16);
@@ -169,21 +173,20 @@ function checkBulletsToLand(bullets, bitmap) {
         bitmap.update();
         bitmap.dirty = true;
         bullet.kill();
-        game.camera.shake(0.0015, 200); /* shake the screen a bit! */
+        game.camera.shake(0.0010, 100); /* shake the screen a bit! */
       }
     }
     bullet.lastX = x;
     bullet.lastY = y;
   }, this, bitmap);
+  
   changeScaleMode(over);
   
-  //if (over==0 & bullets.lastOver==1) {
-  //    setTimeout(function(){
-  //      setWorldScale(1);
-  //    }, 2000);
-  //}
-  //bullets.lastOver=over;
-  
+}
+
+function tankToBulletsHandler(tank, bullet) {
+  bullet.kill();
+  game.camera.shake(0.0020, 250); /* shake the screen a bit! */
 }
 
 function turnTraceOn() {

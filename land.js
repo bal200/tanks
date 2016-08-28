@@ -39,5 +39,32 @@ function updateLand(th) {
     game.world.bringToTop(drawButton);
   }
   
-  
 }
+
+
+/* this colision function will exclude hits in the tanks own defence area */
+function checkBitmapForHit(bitmap, x,y, who) {
+  var rgba = bitmap.getPixel(x, y);
+  if (rgba.a > 0) {
+    if (who==1) { /* its the players bullet */
+      if (x>140 && x<800 && 
+          y>300 && y<600) {  /* its in their defences, so ignore this hit */
+        return 0;
+      }
+      return 1;
+    }else if (who==2) { /* its the enemys bullet */
+      if (x>1050 && x<1800 && 
+          y>200 && y<600) {  /* its in their defences, so ignore this hit */
+        return 0;
+      }
+      return 1;
+    }
+  }
+  return 0;
+}
+
+
+
+
+
+
