@@ -19,7 +19,7 @@ gun = {
 function createPlayer (th) {
   
     /******* Player ********************/
-    player = game.add.sprite(300,607,'tank_right'); //game.add.group();
+    player = game.add.sprite(300,616,'tank2_right'); //game.add.group();
     player.speed = 400;
     player.anchor.set(0.5, 0.5);
     //this.player.x=430; this.player.y=400;
@@ -28,7 +28,7 @@ function createPlayer (th) {
     game.physics.enable(player, Phaser.Physics.ARCADE);
     player.body.allowGravity = false;
     player.body.drag = {x:10000,y:10000};
-    player.body.setSize(48,62, 16,5);;
+    player.body.setSize(54,40, 10,5);
     
     //var playerGraphics = game.add.graphics();
     //playerGraphics.beginFill(0x00ffff);

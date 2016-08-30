@@ -117,6 +117,7 @@ function checkBulletForCameraMove(x,y) {
 }
 
 function setWorldScale( i ) {
+  game.camera.reset(); /* work around to stop built-in cam problem */
   scaleMode = i;
   if (i==1){worldScaleTarget=1.0; /* zoomed in on base */
              screenBottomTarget=730; }

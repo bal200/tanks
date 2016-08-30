@@ -51,9 +51,11 @@ BasicGame.Boot.prototype =
     game.load.image("star", "assets/star.png");
     game.load.image("tank_right", "assets/tank_right.png");
     game.load.image("tank_left", "assets/tank_left.png");
+    game.load.image("tank2_right", "assets/tank2_right.png");
     game.load.image("bullet", "assets/bullet.png");
     game.load.image("trace", "assets/trace.png");
     game.load.image("joystick", "assets/joystick.png");
+    game.load.image("joypad", "assets/touchpad.png");
     game.load.image("pencil", "assets/pencil.png");
     game.load.spritesheet("boom", "assets/boom32wh12.png",32,32,12);
     
@@ -91,14 +93,17 @@ BasicGame.Boot.prototype =
     /****** Joystick ******************/
     joystick = game.add.group();
     joystick.method=3;
+    joystick.long = 170; joystick.shrt = 40;
+    joystick.center = {x:10,y:10};
+    
     //var joyGraph = game.add.graphics();
     //joyGraph.beginFill(0x888899, 0.9);
     //joyGraph.drawCircle(0,0 , 120);
     //this.joystick.add(joyGraph);
     //this.joystickBack = game.add.button(0, 0, 'joystick', nothing, this, 2, 1, 0);
-    joystickBack = game.add.sprite(0,0, 'joystick');
-    joystickBack.alpha = 0.4;
-    joystickBack.anchor.set(0.5,0.5);
+    joystickBack = game.add.sprite(0,0, 'joypad');
+    joystickBack.alpha = 0.6;
+    joystickBack.anchor.set(0, 1.0);
     //joystickBack.inputEnabled = true;
     //joystickBack.events.onInputDown.add(pointerOnDown, this);
     joystick.add( joystickBack );
@@ -153,7 +158,7 @@ BasicGame.Boot.prototype =
    
     /********** Joystick ***************************************/
     /* position joystick in screen coords, rather than world coords. */
-    var p = screenToWorld( { x:60, y:game.height-60 } );
+    var p = screenToWorld( { x:joystick.center.x, y:game.height-joystick.center.y } );
     joystick.x = p.x; joystick.y = p.y;
     joystick.scale.set(screenToWorldScale(1));
     
@@ -161,7 +166,7 @@ BasicGame.Boot.prototype =
     this.button.x = p.x; this.button.y = p.y;
     this.button.scale.set(screenToWorldScale(0.6));
     
-    p = screenToWorld( { x:60, y:game.height-180 } );
+    p = screenToWorld( { x:60, y:game.height-230 } );
     drawButton.x = p.x; drawButton.y = p.y;
     drawButton.scale.set(screenToWorldScale(0.12));
     
@@ -191,19 +196,22 @@ function drawOff(){
 function pointerOnDown(p) {
   var w=screenToWorld(p);
   var s=new Phaser.Point(p.x, p.y);
-  var centre=new Phaser.Point(60, game.height-60);
+  var centre=new Phaser.Point(joystick.center.x, game.height-joystick.center.y);
   //console.log("down "+p.x+","+p.y+" myWorld "+w.x.toFixed(0)+","+w.y.toFixed(0));
   
-  if (Math.abs( s.distance(centre) ) < 60 ) { /* in the joystick */
+  var dist = Math.abs(s.distance(centre));
+  var angle = Phaser.Math.radToDeg(Phaser.Math.angleBetweenPoints(centre, s));
+  console.log("angle = "+angle);
+  if (dist > joystick.shrt && dist < joystick.long && /* in the joysticks circle */
+        angle > -90 && angle < 0) {
     /* theve pressed our joystick */
+    console.log("joystikc press ");
     game.input.addMoveCallback(pointerOnMove, this);
-    console.log("in the joystick");
     joystick.pointerId = p.id;
     joystick.start = s; /* store the starting press position, (in screen coords) */
     joystick.centre = centre;
     joystick.last = new Phaser.Point(s.x, s.y); /* the position it was last time */
-    joystick.lastAngle = Phaser.Math.radToDeg(
-                   Phaser.Math.angleBetweenPoints(centre, s)); /* the angle of this press */
+    joystick.lastAngle = angle; /* the angle of this press */
     joystick.lastDist = centre.distance( s ); /* distance from the circles centre */
     turnTraceOn(); /* show the trace lines now were aiming the gun */
   }else {
@@ -278,7 +286,7 @@ function pointerOnMove(p) {
 
 function pointerOnUp(p) {
   var w=screenToWorld(p);
-  console.log("up "+p.x+","+p.y+" myWorld "+w.x.toFixed(0)+","+w.y.toFixed(0));
+  //console.log("up "+p.x+","+p.y+" myWorld "+w.x.toFixed(0)+","+w.y.toFixed(0));
   if (p.id == joystick.pointerId) {
     game.input.deleteMoveCallback(pointerOnMove, this);
     joystick.pointerId = null;

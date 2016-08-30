@@ -14,7 +14,7 @@ function createBullets(th) {
   bullets.enableBody = true;
   bullets.physicsBodyType = Phaser.Physics.ARCADE;
 
-  for (var i = 0; i < 20; i++)
+  for (var i = 0; i < 30; i++)
   {
       var b = bullets.create(0, 0, 'bullet');
       b.name = 'bullet' + i;
@@ -42,7 +42,7 @@ function createBullets(th) {
   
   /******* Explosions group ********/
   explosions = game.add.group();
-  explosions.createMultiple(15, 'boom');
+  explosions.createMultiple(10, 'boom');
   explosions.forEach(function(exp) {
     exp.anchor.x = 0.5; exp.anchor.y = 0.5;
     exp.animations.add('boom');
