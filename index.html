@@ -32,6 +32,7 @@ var drawing = {
 }
 
 var joystick, joystickBack;
+var barrel, barrelBar;
 
 var level = {  /* Settings for this particular level in the game */
   x:0,  y:-1024,  /* world size */
@@ -48,14 +49,17 @@ BasicGame.Boot.prototype =
   preload: function() {
     game.time.advancedTiming = true;
     game.load.image("background", "assets/background 1139x892.png");
-    game.load.image("star", "assets/star.png");
     game.load.image("tank_right", "assets/tank_right.png");
     game.load.image("tank_left", "assets/tank_left.png");
-    game.load.image("tank2_right", "assets/tank2_right.png");
+    game.load.image("tank2_right", "assets/tank2_fromVector2.png");
     game.load.image("bullet", "assets/bullet.png");
     game.load.image("trace", "assets/trace.png");
+    
     game.load.image("joystick", "assets/joystick.png");
     game.load.image("joypad", "assets/touchpad.png");
+    game.load.image("barrel", "assets/barrel.png");
+    game.load.image("barrelBar", "assets/barrelbar.png");
+
     game.load.image("pencil", "assets/pencil.png");
     game.load.spritesheet("boom", "assets/boom32wh12.png",32,32,12);
     
@@ -94,19 +98,26 @@ BasicGame.Boot.prototype =
     joystick = game.add.group();
     joystick.method=3;
     joystick.long = 170; joystick.shrt = 40;
-    joystick.center = {x:10,y:10};
+    joystick.center = {x:10,y:10}; /* the centre here means the segments centre, which is below left of the sprite */
     
-    //var joyGraph = game.add.graphics();
-    //joyGraph.beginFill(0x888899, 0.9);
-    //joyGraph.drawCircle(0,0 , 120);
-    //this.joystick.add(joyGraph);
-    //this.joystickBack = game.add.button(0, 0, 'joystick', nothing, this, 2, 1, 0);
     joystickBack = game.add.sprite(0,0, 'joypad');
-    joystickBack.alpha = 0.6;
+    joystickBack.alpha = 0.4;
     joystickBack.anchor.set(0, 1.0);
-    //joystickBack.inputEnabled = true;
-    //joystickBack.events.onInputDown.add(pointerOnDown, this);
     joystick.add( joystickBack );
+    
+    barrel = game.add.group();
+    barrel.angle = gun.angle;
+    barrelImg = game.add.sprite(0,0,'barrel'); 
+    barrelImg.anchor.set(0.5, 1.0);
+    barrel.add(barrelImg);
+    
+    barrelBar = game.add.sprite(0,0,'barrelBar');
+    barrelBar.anchor.set(0.5, 1.0);
+    barrel.add(barrelBar);
+    
+    joystick.add( barrel );
+    updateJoypadBarrel();
+    
     /* button */
     this.button = game.add.group();
     this.button = game.add.button(0,0, 'joystick', fire, this,0,0,0);
@@ -256,7 +267,6 @@ function pointerOnMove(p) {
       if (dist > 20)
         gun.angle += (angle - joystick.lastAngle);
       gun.power += (dist - joystick.lastDist) *6;
-      
       joystick.lastAngle = angle;      
       joystick.lastDist = dist;
     }
@@ -266,8 +276,12 @@ function pointerOnMove(p) {
     if (gun.angle<-135) gun.angle = -135;
     gun.power = Phaser.Math.clamp(gun.power, 90, 850);
     
+    /* Draw the joypads gun-barrel graphic */
+    updateJoypadBarrel();
+    
     joystick.last = s;
   }
+  
   if (p.id == drawing.pointerId) {
     if (drawing.lastPos!=null){
       if (w.distance( drawing.lastPos ) > 10) {
@@ -299,6 +313,17 @@ function pointerOnUp(p) {
     drawing.pointerId = null;
     game.input.deleteMoveCallback(pointerOnMove, this);
   }
+}
+
+function updateJoypadBarrel() {
+      /* Draw the joypads gun-barrel graphic */
+      barrel.angle = gun.angle;
+      var vec = angleToVector( gun.angle );
+      barrel.x = vec.x * (joystick.shrt );
+      barrel.y = vec.y * (joystick.shrt );
+      barrelBar.length = ((gun.power-90)/(850-90) * 130);
+      barrelBar.crop(new Phaser.Rectangle(0,  130-barrelBar.length,
+                                          15, 130 ));
 }
 
 /** Convert coordinates on the screen, like touches, into their position if they were in the game world

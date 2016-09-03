@@ -8,9 +8,9 @@ var enemy;
 
 /************ Gun *****************/
 gun = {
-  angle : 45,
+  angle : 50,
   angleVelocity:0,
-  power : 220,
+  power : 260,
   powerVelocity:0
 }
 
@@ -30,6 +30,8 @@ function createPlayer (th) {
     player.body.drag = {x:10000,y:10000};
     player.body.setSize(54,40, 10,5);
     
+    player.scale.set(0.5);
+     
     //var playerGraphics = game.add.graphics();
     //playerGraphics.beginFill(0x00ffff);
     //playerGraphics.drawCircle(0, 0, 16);

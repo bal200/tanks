@@ -220,3 +220,9 @@ function turnTraceOff() {
   traceOn=false;
 }
 
+/* convert an angle into a vector.  Assumes 0 degrees is pointing up */
+function angleToVector( angle ) {
+  var vec = new Phaser.Point(0,-1);
+  vec = vec.rotate(0,0, angle, true);
+  return vec;
+}
