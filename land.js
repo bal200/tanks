@@ -41,7 +41,7 @@ function updateLand(th) {
   
 }
 
-
+/* collision detect between land, and to bullet or trace */
 /* this colision function will exclude hits in the tanks own defence area */
 function checkBitmapForHit(bitmap, x,y, who) {
   var rgba = bitmap.getPixel(x, y);

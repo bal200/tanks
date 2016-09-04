@@ -37,11 +37,11 @@ var gameMode = 1; /* 1=Title Screen,  2=Game,  3=Win, 4=Loose */
 
 var level = {  /* Settings for this particular level in the game */
   x:0,  y:-1024,  /* world size */
-  x2:2048, y2:2048,
+  x2:2048, y2:1024,
   bgPercent : 0.15,  /** This percentage of the main screen Scale will be used as the Backgrounds scale.
                       ** Small values = a slow moving distant background */
   bgOffset:{      /** Because the background maths is calculated from the screen middle, you may need to */
-    x:390, y:480  /** pull the background to the left and to the top. Tweak this to make sure the      */
+    x:400, y:470  /** pull the background to the left and to the top. Tweak this to make sure the      */
   }               /** background neatly covers the whole world. */ 
 }
 
@@ -74,7 +74,7 @@ BasicGame.Boot.prototype =
 	create: function() 
 	{
     game.scale.fullScreenScaleMode = Phaser.ScaleManager.RESIZE;
-    game.scale.scaleMode = Phaser.ScaleManager.RESIZE;
+    //game.scale.scaleMode = Phaser.ScaleManager.RESIZE;
 
     game.physics.startSystem(Phaser.Physics.ARCADE);
     game.physics.arcade.gravity.y = 200;
@@ -191,6 +191,7 @@ BasicGame.Boot.prototype =
                       +"scale "+worldScale.toFixed(2)+" "
                       +"player "+player.x.toFixed(0)+","+player.y.toFixed(0)
                       +" gun "+gun.angle.toFixed(1)+"a "+gun.power.toFixed(1)+"p"
+                      +" scrn "+game.scale.width.toFixed(1)+","+game.scale.height.toFixed(1)+""
                       || '--', 2, 14, "#00ff00");   
   }
 };
@@ -206,6 +207,8 @@ function drawOff(){
 }
 
 function pointerOnDown(p) {
+  game.scale.startFullScreen();
+  
   var w=screenToWorld(p);
   var s=new Phaser.Point(p.x, p.y);
   var centre=new Phaser.Point(joystick.center.x, game.height-joystick.center.y);

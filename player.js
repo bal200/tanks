@@ -8,9 +8,9 @@ var enemy;
 
 /************ Gun *****************/
 gun = {
-  angle : 50,
+  angle : 60,
   angleVelocity:0,
-  power : 260,
+  power : 210,
   powerVelocity:0
 }
 
@@ -58,7 +58,7 @@ function createPlayer (th) {
     fireButton = th.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
     fireButton.onDown.add(fire, th);
     
-    game.world.setBounds(level.x, level.y, level.x2, level.y2);
+    game.world.setBounds(level.x, level.y, level.x2-level.x, level.y2-level.y);
     
 }
 

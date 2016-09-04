@@ -157,7 +157,6 @@ function fire(th) {
       //bulletTime = game.time.now + 200;
       var angDrift = game.rnd.between(-1, +2);
       if (angDrift==+2) angDrift=0;
-      console.log("angDrift "+angDrift);
       gun.angle += angDrift;
       gun.power += game.rnd.between(-1, +1);
       updateJoypadBarrel();
