@@ -16,10 +16,11 @@ var scaleModeChangeWaiting=0;
 function createMyCam(th) {
   
     /****** My Camera *****************/
-    cameraMidPos.setTo(player.x, player.y);
+    cameraMidPos.setTo(player.x, 540); /* @todo: find a good cam start point */
     //this.game.camera.reset();
     setWorldScale( 1 /*Mode 1*/ );
-    worldScale=1.3;
+    worldScale=1.4;
+    game.camera.bounds = null; /* Stop the Phaser builtin camera from messing with our zoom code */
 }
 
 function updateMyCam(th) {
@@ -34,9 +35,12 @@ function updateMyCam(th) {
       //var dist = Math.abs( cameraMidPos.distance(this.player) );
       //var worldScaleTarget = 1/ (1.0 + (dist*0.007));
       //worldScaleTarget = 
-      scaleDif = worldScaleTarget - worldScale;
+    scaleDif = worldScaleTarget - worldScale;
+    if (count < 240) { /* @todo: do timing better */
+      worldScale += scaleDif * (scaleLerp/3); /* very slow zoom out at start of game */
+    }else{
       worldScale += scaleDif * scaleLerp;/* 0.05 Scale lerp */
-      
+    }
     // set a minimum and maximum scale value
     worldScale = Phaser.Math.clamp(worldScale, 0.4, 1.3);
     

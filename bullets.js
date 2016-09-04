@@ -148,8 +148,7 @@ function fire(th) {
     if (joystick.pointerId==null)  turnTraceOff(); /* get rid of the trace lines now too */
     var bullet = bullets.getFirstExists(false);
     if (bullet) {
-      var vec = new Phaser.Point(0,-1);
-      vec = vec.rotate(0,0, gun.angle, true);
+      var vec = angleToVector( gun.angle );
       
       bullet.reset(player.x + (vec.x*50), player.y + (vec.y*50));
       bullet.body.velocity.x = vec.x * gun.power;
@@ -161,6 +160,7 @@ function fire(th) {
       console.log("angDrift "+angDrift);
       gun.angle += angDrift;
       gun.power += game.rnd.between(-1, +1);
+      updateJoypadBarrel();
     }
 //}
 }
@@ -220,7 +220,7 @@ function turnTraceOff() {
   traceOn=false;
 }
 
-/* convert an angle into a vector.  Assumes 0 degrees is pointing up */
+/* convert an angle (degrees) into a vector.  Assumes 0 degrees is pointing up */
 function angleToVector( angle ) {
   var vec = new Phaser.Point(0,-1);
   vec = vec.rotate(0,0, angle, true);
