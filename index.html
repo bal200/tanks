@@ -33,6 +33,7 @@ var drawing = {
 
 var joystick, joystickBack;
 var barrel, barrelBar;
+var gameMode = 1; /* 1=Title Screen,  2=Game,  3=Win, 4=Loose */
 
 var level = {  /* Settings for this particular level in the game */
   x:0,  y:-1024,  /* world size */
@@ -72,8 +73,8 @@ BasicGame.Boot.prototype =
   /*****************************************************************************/
 	create: function() 
 	{
-    //game.scale.fullScreenScaleMode = Phaser.ScaleManager.RESIZE;
-    //game.scale.scaleMode = Phaser.ScaleManager.RESIZE;
+    game.scale.fullScreenScaleMode = Phaser.ScaleManager.RESIZE;
+    game.scale.scaleMode = Phaser.ScaleManager.RESIZE;
 
     game.physics.startSystem(Phaser.Physics.ARCADE);
     game.physics.arcade.gravity.y = 200;
@@ -212,7 +213,7 @@ function pointerOnDown(p) {
   
   var dist = Math.abs(s.distance(centre));
   var angle = Phaser.Math.radToDeg(Phaser.Math.angleBetweenPoints(centre, s));
-  console.log("angle = "+angle);
+  //console.log("angle = "+angle);
   if (dist > joystick.shrt && dist < joystick.long && /* in the joysticks circle */
         angle > -90 && angle < 0) {
     /* theve pressed our joystick */

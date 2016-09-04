@@ -19,7 +19,7 @@ gun = {
 function createPlayer (th) {
   
     /******* Player ********************/
-    player = game.add.sprite(300,616,'tank2_right'); //game.add.group();
+    player = game.add.sprite(430,616,'tank2_right'); //game.add.group();
     player.speed = 400;
     player.anchor.set(0.5, 0.5);
     //this.player.x=430; this.player.y=400;
