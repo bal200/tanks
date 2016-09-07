@@ -24,6 +24,7 @@ BasicGame.Boot = function (game) {
 /********  Game Variable Declarations  *****************************************/
 /*******************************************************************************/
 var background;
+var fullScreenButton;
 var drawButton;
 var drawMode = false;
 var drawing = {
@@ -34,6 +35,7 @@ var drawing = {
 var joystick, joystickBack;
 var barrel, barrelBar;
 var gameMode = 1; /* 1=Title Screen,  2=Game,  3=Win, 4=Loose */
+var titlePage;
 
 var level = {  /* Settings for this particular level in the game */
   x:0,  y:-1024,  /* world size */
@@ -49,6 +51,8 @@ BasicGame.Boot.prototype =
 {
   preload: function() {
     game.time.advancedTiming = true;
+    game.load.image("titlepage", "assets/titlepage.png");
+    game.load.image("fullscreen", "assets/fullscreen.png");
     game.load.image("background", "assets/background 1139x892.png");
     game.load.image("tank_right", "assets/tank_right.png");
     game.load.image("tank_left", "assets/tank_left.png");
@@ -96,6 +100,102 @@ BasicGame.Boot.prototype =
     
     
     /****** Joystick ******************/
+    /* not yet */
+
+    /* button */
+    this.button = game.add.group();
+    this.button = game.add.button(0,0, 'joystick', fire, this,0,0,0);
+    this.button.alpha = 0.4;
+    this.button.scale.set(screenToWorldScale(0.6));
+    this.button.anchor.set(0.5,0.5);
+    
+    //drawButton = game.add.group();
+    drawButton = game.add.button(0,0, 'pencil', drawPress, this,0,0,0);
+    drawButton.alpha = 0.6;
+    //drawButton.scale.setTo(screenToWorldScale(0.1));
+    drawButton.anchor.setTo(0.5,0.5);
+    
+    
+    //if (joystick) game.world.bringToTop(joystick);
+    /* Touch screen event handlers */
+    game.input.onDown.add(pointerOnDown, this);
+    game.input.onUp.add(pointerOnUp, this);
+    
+    titlePage = game.add.button(game.width/2,game.height/2, 'titlepage', titlePageStartPress, this,0,0,0);
+    titlePage.anchor.set(0.5,0.5);
+    
+    fullScreenButton = game.add.button(0,0, 'fullscreen', fullScreenModePress, this,0,0,0);
+    
+    /****** My Camera *****************/
+    createMyCam(this);
+    
+
+  },
+
+  /**********  Update Function  ************************************************/
+  /*****************************************************************************/
+  update: function() 
+  {
+    
+    /************ Player **************************************/
+    updatePlayer(this);
+
+    /************ Gun *****************************************/
+    if (joystick) { if (joystick.method==1) {
+      gun.angle += gun.angleVelocity;
+      gun.power += gun.powerVelocity;
+    }}
+    /********** Foreground ************************************/
+    updateLand(this);
+
+    /********** Bullets ***************************************/
+    updateBullets(this);
+    
+    /********** My Camera **************************************/
+    updateMyCam(this);
+   
+   
+    /********** Joystick ***************************************/
+    /* position joystick in screen coords, rather than world coords. */
+    if (joystick!=null) {
+      var p = screenToWorld( { x:joystick.center.x, y:game.height-joystick.center.y } );
+      joystick.x = p.x; joystick.y = p.y;
+      joystick.scale.set(screenToWorldScale(1));
+    }
+    
+    p = screenToWorld( { x:game.width-60, y:game.height-60 } );
+    this.button.x = p.x; this.button.y = p.y;
+    this.button.scale.set(screenToWorldScale(0.6));
+    
+    p = screenToWorld( { x:60, y:game.height-230 } );
+    drawButton.x = p.x; drawButton.y = p.y;
+    drawButton.scale.set(screenToWorldScale(0.12));
+    
+    p = screenToWorld( { x:(game.width/2), y:(game.height/2) } );
+    titlePage.x = p.x; titlePage.y = p.y;
+    titlePage.scale.set(screenToWorldScale(1.0));
+    titlePage.bringToTop();
+    
+    p = screenToWorld( { x:10, y:10 } );
+    fullScreenButton.x = p.x; fullScreenButton.y = p.y;
+    fullScreenButton.scale.set(screenToWorldScale(1.0));
+
+  }, 
+  render: function()
+  {
+      game.debug.text(game.time.fps+"fps "
+                      +"cam "+game.camera.x+","+game.camera.y+" "
+                      +"myCam "+game.world.pivot.x.toFixed(0)+","+game.world.pivot.y.toFixed(0)+" "
+                      +"scale "+worldScale.toFixed(2)+" "
+                      +"player "+player.x.toFixed(0)+","+player.y.toFixed(0)
+                      +" gun "+gun.angle.toFixed(1)+"a "+gun.power.toFixed(1)+"p"
+                      +" scrn "+game.scale.width.toFixed(1)+","+game.scale.height.toFixed(1)+""
+                      || '--', 2, 14, "#00ff00");   
+  }
+};
+
+/***************************** Functions **********************************************/
+function createJoystick() {
     joystick = game.add.group();
     joystick.method=3;
     joystick.long = 170; joystick.shrt = 40;
@@ -117,110 +217,42 @@ BasicGame.Boot.prototype =
     barrel.add(barrelBar);
     
     joystick.add( barrel );
-    updateJoypadBarrel();
-    
-    /* button */
-    this.button = game.add.group();
-    this.button = game.add.button(0,0, 'joystick', fire, this,0,0,0);
-    this.button.alpha = 0.4;
-    this.button.scale.set(screenToWorldScale(0.6));
-    this.button.anchor.set(0.5,0.5);
-    
-    //drawButton = game.add.group();
-    drawButton = game.add.button(0,0, 'pencil', drawPress, this,0,0,0);
-    drawButton.alpha = 0.6;
-    //drawButton.scale.setTo(screenToWorldScale(0.1));
-    drawButton.anchor.setTo(0.5,0.5);
-    
-    
-    game.world.bringToTop(joystick);
-    /* Touch screen event handlers */
-    game.input.onDown.add(pointerOnDown, this);
-    game.input.onUp.add(pointerOnUp, this);
-    
-    
-    /****** My Camera *****************/
-    createMyCam(this);
-    
+    updateJoypadBarrel(); /* set the joystick to reflect the current gun position */
+}
 
-  },
+function titlePageStartPress() {
+  titlePage.destroy();
+  gameMode = 2; /* Start Game */
+  createJoystick();
+  startEnemyLogic();
 
-  /**********  Update Function  ************************************************/
-  /*****************************************************************************/
-  update: function() 
-  {
-    
-    /************ Player **************************************/
-    updatePlayer(this);
-
-    /************ Gun *****************************************/
-    if (joystick.method==1) {
-      gun.angle += gun.angleVelocity;
-      gun.power += gun.powerVelocity;
-    }
-    /********** Foreground ************************************/
-    updateLand(this);
-
-    /********** Bullets ***************************************/
-    updateBullets(this);
-    
-    /********** My Camera **************************************/
-    updateMyCam(this);
-   
-   
-    /********** Joystick ***************************************/
-    /* position joystick in screen coords, rather than world coords. */
-    var p = screenToWorld( { x:joystick.center.x, y:game.height-joystick.center.y } );
-    joystick.x = p.x; joystick.y = p.y;
-    joystick.scale.set(screenToWorldScale(1));
-    
-    p = screenToWorld( { x:game.width-60, y:game.height-60 } );
-    this.button.x = p.x; this.button.y = p.y;
-    this.button.scale.set(screenToWorldScale(0.6));
-    
-    p = screenToWorld( { x:60, y:game.height-230 } );
-    drawButton.x = p.x; drawButton.y = p.y;
-    drawButton.scale.set(screenToWorldScale(0.12));
-    
-  }, 
-  render: function()
-  {
-      game.debug.text(game.time.fps+"fps "
-                      +"cam "+game.camera.x+","+game.camera.y+" "
-                      +"myCam "+game.world.pivot.x.toFixed(0)+","+game.world.pivot.y.toFixed(0)+" "
-                      +"scale "+worldScale.toFixed(2)+" "
-                      +"player "+player.x.toFixed(0)+","+player.y.toFixed(0)
-                      +" gun "+gun.angle.toFixed(1)+"a "+gun.power.toFixed(1)+"p"
-                      +" scrn "+game.scale.width.toFixed(1)+","+game.scale.height.toFixed(1)+""
-                      || '--', 2, 14, "#00ff00");   
-  }
-};
-
-/***************************** Functions **********************************************/
+}
 function drawPress() { /* the drawing pencil button pressed */
-  if(drawMode == false)  {drawMode=true; drawButton.alpha=0.9}
+  if(drawMode==false)  {drawMode=true; drawButton.alpha=0.9}
   else  {drawMode=false; drawButton.alpha=0.6}
   turnTraceOff();
 }
 function drawOff(){
-  drawMode=false; drawButton.alpha=0.6;
+  if (drawMode==true) {drawMode=false; drawButton.alpha=0.6;}
+}
+
+function fullScreenModePress() {
+  game.scale.startFullScreen();
 }
 
 function pointerOnDown(p) {
-  game.scale.startFullScreen();
-  
+
   var w=screenToWorld(p);
   var s=new Phaser.Point(p.x, p.y);
-  var centre=new Phaser.Point(joystick.center.x, game.height-joystick.center.y);
-  //console.log("down "+p.x+","+p.y+" myWorld "+w.x.toFixed(0)+","+w.y.toFixed(0));
-  
-  var dist = Math.abs(s.distance(centre));
-  var angle = Phaser.Math.radToDeg(Phaser.Math.angleBetweenPoints(centre, s));
+  if (joystick) {
+    var centre=new Phaser.Point(joystick.center.x, game.height-joystick.center.y);
+    var dist = Math.abs(s.distance(centre));
+    var angle = Phaser.Math.radToDeg(Phaser.Math.angleBetweenPoints(centre, s));
+  }
   //console.log("angle = "+angle);
-  if (dist > joystick.shrt && dist < joystick.long && /* in the joysticks circle */
+  if (joystick && dist > joystick.shrt && dist < joystick.long && /* in the joysticks circle */
         angle > -90 && angle < 0) {
-    /* theve pressed our joystick */
-    console.log("joystikc press ");
+    /* theyve in our joystick */
     game.input.addMoveCallback(pointerOnMove, this);
     joystick.pointerId = p.id;
     joystick.start = s; /* store the starting press position, (in screen coords) */
@@ -305,14 +337,14 @@ function pointerOnMove(p) {
 function pointerOnUp(p) {
   var w=screenToWorld(p);
   //console.log("up "+p.x+","+p.y+" myWorld "+w.x.toFixed(0)+","+w.y.toFixed(0));
-  if (p.id == joystick.pointerId) {
+  if (joystick){ if (p.id == joystick.pointerId) {
     game.input.deleteMoveCallback(pointerOnMove, this);
     joystick.pointerId = null;
     //this.player.body.velocity.x = 0;
     //this.player.body.velocity.y = 0;
     //this.gun.angleVelocity =0;
     //this.gun.powerVelocity =0;
-  }
+  }}
   if (p.id == drawing.pointerId) {
     drawing.pointerId = null;
     game.input.deleteMoveCallback(pointerOnMove, this);

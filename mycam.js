@@ -15,7 +15,11 @@ var scaleModeChangeWaiting=0;
 var screenSizeScaled;
 
 function createMyCam(th) {
-  
+    
+    game.scale.onFullScreenChange.add(function() { /* re-do the scaling if we go full screen */
+      setWorldScale();
+    });
+    
     /****** My Camera *****************/
     cameraMidPos.setTo(player.x, 540); /* @todo: find a good cam start point */
     //this.game.camera.reset();
@@ -124,14 +128,14 @@ function checkBulletForCameraMove(x,y) {
 }
 
 function setWorldScale( i ) {
-  scaleMode = i;
+  if (i != null)  scaleMode = i;
   var a=game.width / 900 ;
   
-  if (i==1){worldScaleTarget=1.0*a; /* zoomed in on base */
+  if (scaleMode==1){worldScaleTarget=1.0*a; /* zoomed in on base */
              screenBottomTarget=730; }
-  if (i==2){worldScaleTarget=0.59*a; /* zoomed out for firing */
+  if (scaleMode==2){worldScaleTarget=0.59*a; /* zoomed out for firing */
                screenBottomTarget=960; }
-  if (i==3){worldScaleTarget=0.49*a; /* extended zoom out - for distance firing */
+  if (scaleMode==3){worldScaleTarget=0.49*a; /* extended zoom out - for distance firing */
                screenBottomTarget=960; }
 }
 

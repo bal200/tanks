@@ -49,9 +49,6 @@ function createPlayer (th) {
     enemy.body.drag = {x:10000,y:10000};
     enemy.body.setSize(48,62, 16,5);
     
-    enemyLogicTimeout=setTimeout(enemyLogic, 5000);
-    setTimeout(function(){enemyDrawRandomDefence(); enemyDrawRandomDefence();
-      enemyDrawRandomDefence(); enemyDrawRandomDefence();}, 2000);
     
     /******* Keys *****************/
     cursors = th.input.keyboard.createCursorKeys();
@@ -93,6 +90,12 @@ function updatePlayer( th ) {
 
 
 /**************** Enemy Tank **********************/
+
+function startEnemyLogic() {
+  enemyLogicTimeout=setTimeout(enemyLogic, 5000);
+  setTimeout(function(){enemyDrawRandomDefence(); enemyDrawRandomDefence();
+    enemyDrawRandomDefence(); enemyDrawRandomDefence();}, 2000);
+}
 
 function enemyLogic() {
   var what = game.rnd.between(0, 4);

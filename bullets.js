@@ -14,7 +14,7 @@ function createBullets(th) {
   bullets.enableBody = true;
   bullets.physicsBodyType = Phaser.Physics.ARCADE;
 
-  for (var i = 0; i < 30; i++)
+  for (var i = 0; i < 40; i++)
   {
       var b = bullets.create(0, 0, 'bullet');
       b.name = 'bullet' + i;
