@@ -246,17 +246,17 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.979899"
-     inkscape:cx="361.06707"
-     inkscape:cy="122.82485"
+     inkscape:zoom="2.8"
+     inkscape:cx="466.14567"
+     inkscape:cy="154.86257"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="true"
      showguides="true"
-     inkscape:window-width="1199"
+     inkscape:window-width="1259"
      inkscape:window-height="942"
-     inkscape:window-x="694"
-     inkscape:window-y="40"
+     inkscape:window-x="600"
+     inkscape:window-y="50"
      inkscape:window-maximized="0"
      inkscape:snap-bbox="true">
     <inkscape:grid
@@ -278,6 +278,14 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1">
+    <rect
+       style="opacity:1;fill:#c9c1f1;fill-opacity:1;fill-rule:nonzero;stroke:#ffffff;stroke-width:1.54574227;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect4211"
+       width="169.95425"
+       height="164.95427"
+       x="410.02286"
+       y="857.38507"
+       ry="9.9972277" />
     <g
        id="g4226"
        inkscape:export-xdpi="58.838108"
@@ -510,5 +518,29 @@
        d="m 318.85896,973.15813 0.56038,0.8673 C 320,974.3622 320,975.25502 320.57631,975.32712 l 1.42728,0.17858 c 1.4704,0.18396 0.60355,-0.29299 0.65999,-1.85352 l 0.13986,-3.86674 c 0.0564,-1.56054 -4.3719,-1.61081 -3.74627,-0.19134 l 0.33908,0.76931 c 0.62563,1.41947 -1.35159,1.53442 -0.53729,2.79472 z"
        id="path5159"
        sodipodi:nodetypes="scsssssss" />
+    <rect
+       style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#ffffff;stroke-width:1.5;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect4209"
+       width="125"
+       height="20"
+       x="440"
+       y="932.36218"
+       ry="10"
+       inkscape:export-xdpi="60.601048"
+       inkscape:export-ydpi="60.601048" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:40px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;"
+       x="455"
+       y="947.36218"
+       id="text4205"
+       sodipodi:linespacing="100%"
+       inkscape:export-xdpi="60.601048"
+       inkscape:export-ydpi="60.601048"><tspan
+         sodipodi:role="line"
+         id="tspan4207"
+         x="455"
+         y="947.36218"
+         style="-inkscape-font-specification:'sans-serif, Normal';font-family:sans-serif;font-weight:normal;font-style:normal;font-stretch:normal;font-variant:normal;font-size:13.75px;text-anchor:start;text-align:start;writing-mode:lr;line-height:100%;fill:#ffffff;fill-opacity:1;">FULL SCREEN</tspan></text>
   </g>
 </svg>

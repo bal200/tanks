@@ -145,7 +145,7 @@ function fire(th) {
 //if (game.time.now > bulletTime)
 //{
     drawOff(); /* turn off drawing mode now were shootin' */
-    if (joystick.pointerId==null)  turnTraceOff(); /* get rid of the trace lines now too */
+    if (this.joystick.pointerId==null)  turnTraceOff(); /* get rid of the trace lines now too */
     var bullet = bullets.getFirstExists(false);
     if (bullet) {
       var vec = angleToVector( gun.angle );
@@ -159,7 +159,7 @@ function fire(th) {
       if (angDrift==+2) angDrift=0;
       gun.angle += angDrift;
       gun.power += game.rnd.between(-1, +1);
-      updateJoypadBarrel();
+      this.joystick.updateJoypadBarrel();
     }
 //}
 }

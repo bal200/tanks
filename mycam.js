@@ -146,3 +146,24 @@ function reduceAScale(scale, ratio) {
 }
 
 
+
+/** Convert coordinates on the screen, like touches, into their position if they were in the game world
+ ** Takes into account the camera position and scaling too */
+function screenToWorld(s) {
+  w = new Phaser.Point();
+  w.x = ((s.x / worldScale) + game.world.pivot.x);
+  w.y = ((s.y / worldScale) + game.world.pivot.y);
+  return w;
+}
+function worldToScreen(w) {
+  s = new Phaser.Point();
+  s.x = ((w.x - game.world.pivot.x) * worldScale);
+  s.y = ((w.y - game.world.pivot.y) * worldScale);
+  return s;
+}
+function screenToWorldScale(s) {
+  return (1/worldScale) * s;
+}
+
+
+
