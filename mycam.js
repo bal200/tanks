@@ -78,30 +78,67 @@ function updateMyCam(th) {
 
     
     /******** Parallax Background **********************************/
+    th.background.myUpdate(game.world.pivot, screenSizeScaled, worldScale);
+    
     /* Work out Camera Middle again, but this time it will include any Clamping */
-    var newCamMid = new Phaser.Point(game.world.pivot.x + (screenSizeScaled.x /2),
-                                     game.world.pivot.y + (screenSizeScaled.y /2));
+    //var newCamMid = new Phaser.Point(game.world.pivot.x + (screenSizeScaled.x /2),
+    //                                 game.world.pivot.y + (screenSizeScaled.y /2));
+    //
+    //var bgPercent = level.bgPercent;
+    ////var a=game.width / 900 ;
+    ///** A percentage of the main screen Scale will be the Backgrounds scale.
+    // ** small values = slow moving, distant looking background */
+    //var bgScale =  (1/worldScale) * reduceAScale(worldScale+1.0, bgPercent);
+    ///* the (1/worldscale) effectively cancels out the worldscale already in the translation */
+    //background.scale.set(  bgScale  );
+    //
+    //var bgOffset = level.bgOffset;
+    //background.position.set(newCamMid.x /* start from screen middle, this value doesnt get scaled */
+    //                      -(( (newCamMid.x*bgPercent) +bgOffset.x ) *bgScale),
+    //                   /* take off to pull bg to the left:
+    //                    *  a small percentage of camera position, so it moves slower
+    //                    *  add an offset to account for the black on left and top edges,
+    //                    *  then multiply by the backgrounds scale from above */
+    //                    
+    //                    (newCamMid.y) /* same for Y */
+    //                      -(( (newCamMid.y*bgPercent)+bgOffset.y ) * bgScale) );
 
-    var bgPercent = level.bgPercent;
-    //var a=game.width / 900 ;
+}
+
+/******************** PARALLAX BACKGROUND CLASS ***************************************/
+/**************************************************************************************/
+var Parallax = function(bgPercent, bgOffset) {
+  Phaser.Group.call(this, game); /* create a Group, the parent Class */
+  this.bgPercent=bgPercent; /* percentage of the main worldScale */
+  this.bgOffset=bgOffset;  /* Point */
+}
+inheritPrototype(Parallax, Phaser.Group);
+
+Parallax.prototype.myUpdate=function(pivot, screenScale, worldScale) {
+    /******** Parallax Background **********************************/
+    //var bgPercent = level.bgPercent;
+    //var bgOffset = level.bgOffset;
+    /* Work out Camera Middle again, but this time it will include any Clamping */
+    var camMid = new Phaser.Point(pivot.x + (screenScale.x /2),
+                                     pivot.y + (screenScale.y /2));
+
     /** A percentage of the main screen Scale will be the Backgrounds scale.
      ** small values = slow moving, distant looking background */
-    var bgScale =  (1/worldScale) * reduceAScale(worldScale+1.0, bgPercent);
+    var bgScale = (1/worldScale) * reduceAScale(worldScale+1.0, this.bgPercent);
     /* the (1/worldscale) effectively cancels out the worldscale already in the translation */
-    background.scale.set(  bgScale  );
+    this.scale.set(  bgScale  );
     
-    var bgOffset = level.bgOffset;
-    background.position.set(newCamMid.x /* start from screen middle, this value doesnt get scaled */
-                          -(( (newCamMid.x*bgPercent) +bgOffset.x ) *bgScale),
+    this.position.set(camMid.x /* start from screen middle, this value doesnt get scaled */
+                          -(( (camMid.x*this.bgPercent) +this.bgOffset.x ) *bgScale),
                        /* take off to pull bg to the left:
                         *  a small percentage of camera position, so it moves slower
                         *  add an offset to account for the black on left and top edges,
                         *  then multiply by the backgrounds scale from above */
                         
-                        (newCamMid.y) /* same for Y */
-                          -(( (newCamMid.y*bgPercent)+bgOffset.y ) * bgScale) );
-
+                        (camMid.y) /* same for Y */
+                          -(( (camMid.y*this.bgPercent)+this.bgOffset.y ) * bgScale) );
 }
+
 
 function changeScaleMode(n) {
   if (scaleMode == n) return; /* already at the right scale, do nothing */
@@ -167,3 +204,16 @@ function screenToWorldScale(s) {
 
 
 
+if (typeof Object.create !== 'function') {
+    Object.create = function (o) {
+        function F() {
+        }
+        F.prototype = o;
+        return new F();
+    };
+}
+function inheritPrototype(childObject, parentObject) {
+    var copyOfParent = Object.create(parentObject.prototype);
+    copyOfParent.constructor = childObject;
+    childObject.prototype = copyOfParent;
+}

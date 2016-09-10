@@ -4,7 +4,7 @@
         <meta charset="UTF-8" />
         <title>Bals game</title>
         <!-- use local Phaser Lib -->
-        <!--<script src="phaser\build\phaser.js"></script>  -->
+        <!-- <script src="phaser\build\phaser.js"></script>   -->
         <!-- use CDN Phaser Lib -->
         <script src="//cdn.jsdelivr.net/phaser/2.6.1/phaser.min.js"></script>
         <script src="land.js"></script>
@@ -23,7 +23,7 @@ BasicGame.Boot = function (game) { /* Class */
 
 /********  Game Variable Declarations  *****************************************/
 /*******************************************************************************/
-var background;
+//var background;
 var fullScreenButton;
 var drawButton;
 var drawMode = false;
@@ -54,6 +54,7 @@ BasicGame.Boot.prototype =
     game.load.image("titlepage", "assets/titlepage.png");
     game.load.image("fullscreen", "assets/fullscreen.png");
     game.load.image("background", "assets/background 1139x892.png");
+    game.load.image("cloud", "assets/cloud.png");
     game.load.image("tank_right", "assets/tank_right.png");
     game.load.image("tank_left", "assets/tank_left.png");
     game.load.image("tank2_right", "assets/tank2_fromVector2.png");
@@ -84,11 +85,23 @@ BasicGame.Boot.prototype =
     game.physics.arcade.gravity.y = 200;
     
     /******* Parallax Background ********/
-    background = game.add.sprite(0, 0, 'background');
-    //background.fixedToCamera = true;
-    //background.tileScale.set(0.5);
-    //background.tint = 0x660000;
-
+    this.background = new Parallax(level.bgPercent, level.bgOffset);
+    this.background.theImage = game.add.sprite(0, 0, 'background');
+    this.background.add( this.background.theImage );
+    
+    /******* Make some Clouds! **********/
+    var cld=game.add.sprite(60, 300, 'cloud'); cld.alpha=0.4; cld.scale.set(0.6);
+    game.add.tween(cld).to({x:1100}, 140000, null, true, 0, 0, false).onComplete.add(cloudLoop, this);
+    this.background.add( cld );
+    
+    cld=game.add.sprite(400, 200, 'cloud'); cld.alpha=0.5; cld.scale.set(0.8);
+    game.add.tween(cld).to({x:1100}, 100000, null, true, 0, 0, false).onComplete.add(cloudLoop, this);
+    this.background.add( cld );
+    
+    cld=game.add.sprite(700, 310, 'cloud'); cld.alpha=0.6; cld.scale.set(0.7);
+    game.add.tween(cld).to({x:1100}, 65000, null, true, 0, 0, false).onComplete.add(cloudLoop, this);
+    this.background.add( cld );
+    
     /*****  Foreground (Land) **********/    
     createLand(this);
 
@@ -103,7 +116,7 @@ BasicGame.Boot.prototype =
     this.joystick = null; /* not yet */
 
     /* button */
-    this.button = game.add.group();
+    //this.button = game.add.group();
     this.button = game.add.button(0,0, 'joystick', fire, this,0,0,0);
     this.button.alpha = 0.4;
     this.button.scale.set(screenToWorldScale(0.6));
@@ -372,12 +385,6 @@ function pointerOnUp(p) {
 }
 
 
-
-game.state.add('Boot', BasicGame.Boot);
-game.state.start('Boot');
-
-
- 
 if (typeof Object.create !== 'function') {
     Object.create = function (o) {
         function F() {
@@ -391,6 +398,14 @@ function inheritPrototype(childObject, parentObject) {
     copyOfParent.constructor = childObject;
     childObject.prototype = copyOfParent;
 }
+
+
+game.state.add('Boot', BasicGame.Boot);
+game.state.start('Boot');
+
+
+ 
+
 
     </script>
     </body>

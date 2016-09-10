@@ -64,6 +64,16 @@ function checkBitmapForHit(bitmap, x,y, who) {
 }
 
 
+function cloudLoop( cloud, tween ) {
+  tween.stop();
+  game.add.tween(cloud).to({x:-100}, 1, Phaser.Easing.Linear.None , false, 0, 0, false)
+                       .to({x:1300}, 150000, Phaser.Easing.Linear.None , false, 0, 0, false)
+                       .loop()
+                       .start();
+}
+
+
+
 
 
 
