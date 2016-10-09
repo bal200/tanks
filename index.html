@@ -11,6 +11,7 @@
         <script src="player.js"></script>
         <script src="bullets.js"></script>
         <script src="mycam.js"></script>
+        <script src="learning.js"></script>
     </head>
     <body>
     <script type="text/javascript">
@@ -38,7 +39,7 @@ var gameMode = 1; /* 1=Title Screen,  2=Game,  3=Win, 4=Loose */
 var titlePage;
 
 var level = {  /* Settings for this particular level in the game */
-  x:0,  y:-1024,  /* world size */
+  x:0,  y:-1536,  /* world size */
   x2:2048, y2:1024,
   bgPercent : 0.15,  /** This percentage of the main screen Scale will be used as the Backgrounds scale.
                       ** Small values = a slow moving distant background */
@@ -69,7 +70,7 @@ BasicGame.Boot.prototype =
     game.load.image("pencil", "assets/pencil.png");
     game.load.spritesheet("boom", "assets/boom32wh12.png",32,32,12);
     
-    game.load.tilemap('tilemap', 'assets/tilemap2.json', null, Phaser.Tilemap.TILED_JSON);
+    game.load.tilemap('tilemap', 'assets/tilemap.json', null, Phaser.Tilemap.TILED_JSON);
     game.load.image('jungletileset', 'assets/jungletileset_32x32.png');
     
   },
@@ -113,20 +114,8 @@ BasicGame.Boot.prototype =
     
     
     /****** Joystick ******************/
+    this.screenFix = new ScreenFix(); /* adding buttons to screenFix will keep their position reletive to the screen */
     this.joystick = null; /* not yet */
-
-    /* button */
-    //this.button = game.add.group();
-    this.button = game.add.button(0,0, 'joystick', fire, this,0,0,0);
-    this.button.alpha = 0.4;
-    this.button.scale.set(screenToWorldScale(0.6));
-    this.button.anchor.set(0.5,0.5);
-    
-    //drawButton = game.add.group();
-    drawButton = game.add.button(0,0, 'pencil', drawPress, this,0,0,0);
-    drawButton.alpha = 0.6;
-    //drawButton.scale.setTo(screenToWorldScale(0.1));
-    drawButton.anchor.setTo(0.5,0.5);
     
     
     //if (joystick) game.world.bringToTop(joystick);
@@ -136,8 +125,11 @@ BasicGame.Boot.prototype =
     
     titlePage = game.add.button(game.width/2,game.height/2, 'titlepage', titlePageStartPress, this,0,0,0);
     titlePage.anchor.set(0.5,0.5);
+    this.screenFix.add(titlePage, game.width/2, game.height/2, 1.0);
     
     fullScreenButton = game.add.button(0,0, 'fullscreen', fullScreenModePress, this,0,0,0);
+    this.screenFix.add(fullScreenButton, 10, 10, 1.0);
+    
     
     /****** My Camera *****************/
     createMyCam(this);
@@ -169,29 +161,30 @@ BasicGame.Boot.prototype =
    
    
     /********** Joystick ***************************************/
+    this.screenFix.update();
     /* position joystick in screen coords, rather than world coords. */
-    if (this.joystick!=null) {
-      var p = screenToWorld( { x:this.joystick.center.x, y:game.height-this.joystick.center.y } );
-      this.joystick.x = p.x; this.joystick.y = p.y;
-      this.joystick.scale.set(screenToWorldScale(1));
-    }
+    //if (this.joystick!=null) {
+    //  var p = screenToWorld( { x:this.joystick.center.x, y:game.height-this.joystick.center.y } );
+    //  this.joystick.x = p.x; this.joystick.y = p.y;
+    //  this.joystick.scale.set(screenToWorldScale(1));
+    //}
     
-    p = screenToWorld( { x:game.width-60, y:game.height-60 } );
-    this.button.x = p.x; this.button.y = p.y;
-    this.button.scale.set(screenToWorldScale(0.6));
+    //p = screenToWorld( { x:game.width-60, y:game.height-60 } );
+    //this.button.x = p.x; this.button.y = p.y;
+    //this.button.scale.set(screenToWorldScale(0.6));
     
-    p = screenToWorld( { x:60, y:game.height-230 } );
-    drawButton.x = p.x; drawButton.y = p.y;
-    drawButton.scale.set(screenToWorldScale(0.12));
+    //p = screenToWorld( { x:60, y:game.height-230 } );
+    //drawButton.x = p.x; drawButton.y = p.y;
+    //drawButton.scale.set(screenToWorldScale(0.12));
     
     p = screenToWorld( { x:(game.width/2), y:(game.height/2) } );
     titlePage.x = p.x; titlePage.y = p.y;
     titlePage.scale.set(screenToWorldScale(1.0));
     titlePage.bringToTop();
     
-    p = screenToWorld( { x:10, y:10 } );
-    fullScreenButton.x = p.x; fullScreenButton.y = p.y;
-    fullScreenButton.scale.set(screenToWorldScale(1.0));
+    //p = screenToWorld( { x:10, y:10 } );
+    //fullScreenButton.x = p.x; fullScreenButton.y = p.y;
+    //fullScreenButton.scale.set(screenToWorldScale(1.0));
 
   }, 
   render: function()
@@ -204,10 +197,51 @@ BasicGame.Boot.prototype =
                       +" gun "+gun.angle.toFixed(1)+"a "+gun.power.toFixed(1)+"p"
                       +" scrn "+game.scale.width.toFixed(1)+","+game.scale.height.toFixed(1)+""
                       || '--', 2, 14, "#00ff00");   
+  },
+  startGame: function() {
+    /* After the title screen, called when user presses Play button */
+    gameMode = 2; /* Start Game */
+    this.joystick=new Joystick(); //createJoystick();
+    this.screenFix.add( this.joystick, this.joystick.center.x, -this.joystick.center.y, 1.0 );
+    
+    createFireButton(this);
+    createDrawButton(this);
+
+    startEnemyLogic();
   }
 };
 
+/************************ SCREEN FIX CLASS ********************************************/
+/**************************************************************************************/
+var ScreenFix = function () {
+  this.item = [];
+}
+ScreenFix.prototype.update = function() {
+  for (var n=0; n<this.item.length; n++) {
+    var itm = this.item[n];
+    var x=itm.screenFix.x, y=itm.screenFix.y;
+    if (x < 0) x = game.width + itm.screenFix.x;
+    if (y < 0) y = game.height + itm.screenFix.y;
+    var p = screenToWorld( { x: x, y: y } );
+    itm.x = p.x;  itm.y = p.y;
+    itm.scale.set(screenToWorldScale(itm.screenFix.scale));
+  }
+}
+ScreenFix.prototype.add = function( itm, x,y,scale ) {
+  itm.screenFix = { x: x, y: y, scale: scale };
+  this.item.push( itm );
+  
+}
+ScreenFix.prototype.remove = function( itm ) {
+  for (var n=0; n<this.item.length; n++) {
+    if (this.item[n] === itm) {
+      this.item.splice(n, 1);
+      return;
+    }
+  }
+}
 
+/**************************************************************************************/
 /************************** JOYSTICK CLASS ********************************************/
 /**************************************************************************************/
 var Joystick = function () {
@@ -250,15 +284,36 @@ Joystick.prototype.updateJoypadBarrel = function(/* gun? */) {
 }
 
 
-
 /***************************** Functions **********************************************/
 function titlePageStartPress() {
-  console.log('button up', arguments);
-  titlePage.destroy();
-  gameMode = 2; /* Start Game */
-  this.joystick=new Joystick(); //createJoystick();
-  startEnemyLogic();
+  /* Fade out the title page */
+  game.add.tween(titlePage).to({alpha:0}, 400, null, true, 0, 0, false) /* fade out title screen */
+                           .onComplete.add(function(sprite, tween){
+                              this.screenFix.remove(sprite);
+                              sprite.destroy();
+                              this.startGame();
+                           }, this);
 
+  /* Cause the camera to tween down from the sky to the tank */
+  camTarget.setTo(player.x, player.y);
+  //this.startGame();
+  
+}
+/*************** Fire Button ********************/
+function createFireButton(th) {
+    /* button */
+    th.button = game.add.button(0,0, 'joystick', fire, th,0,0,0);
+    th.button.alpha = 0.4;
+    th.button.anchor.set(0.5,0.5);
+    th.screenFix.add(th.button, -60, -60, 0.6);
+}
+
+/************ Drawing Pencil Button **************/
+function createDrawButton(th) {
+    drawButton = game.add.button(0,0, 'pencil', drawPress, this,0,0,0);
+    drawButton.alpha = 0.6;
+    drawButton.anchor.setTo(0.5,0.5);
+    th.screenFix.add(drawButton, 60, -230, 0.12);
 }
 function drawPress() { /* the drawing pencil button pressed */
   if(drawMode==false)  {drawMode=true; drawButton.alpha=0.9}
@@ -269,14 +324,18 @@ function drawOff(){
   if (drawMode==true) {drawMode=false; drawButton.alpha=0.6;}
 }
 
+
 function fullScreenModePress() {
   game.scale.startFullScreen();
 }
 
+/******************** POINTER MOVEMENT HANDLERS ***************************************/
+/**************************************************************************************/
 function pointerOnDown(p) {
 
   var w=screenToWorld(p);
   var s=new Phaser.Point(p.x, p.y);
+  
   if (this.joystick) {
     var centre=new Phaser.Point(this.joystick.center.x, game.height-this.joystick.center.y);
     var dist = Math.abs(s.distance(centre));

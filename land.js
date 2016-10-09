@@ -35,8 +35,8 @@ function updateLand(th) {
     bitmap.update();
     layer.destroy();
     if (th.joystick) game.world.bringToTop(th.joystick);
-    game.world.bringToTop(th.button);
-    game.world.bringToTop(drawButton);
+    //game.world.bringToTop(th.button);
+    //game.world.bringToTop(drawButton);
   }
   
 }

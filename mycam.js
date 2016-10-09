@@ -1,12 +1,13 @@
 
 
 /***** My Camera initialisation **********/
-var cameraMidPos = new Phaser.Point(0, 0);  /* my camera */
-var worldScale = 1.3;   /* right at game begining, this 1.3 will cause a slow zoom out to 1.0 */
+var cameraMidPos = new Phaser.Point(0, 0);  /* Current middle of My camera view */
+var worldScale = 1.0;   /* right at game begining, this 1.3 will cause a slow zoom out to 1.0 */
 var worldScaleTarget = 1.0;
 var lerp = 0.1;        // Camera movement amount of damping, lower values = smoother camera movement
 var scaleLerp = 0.05;  /* amount of damping on scale changes */
-
+var camTarget = new Phaser.Point(0,0); /* where the cam shold be now.  it will Lerp towards this slowly */
+var camVelocity = new Phaser.Point(0,0); /* speed the cameraMidPos is moving towards cam Target */
 
 var scaleMode=1;
 var screenBottomTarget;
@@ -21,10 +22,11 @@ function createMyCam(th) {
     });
     
     /****** My Camera *****************/
-    cameraMidPos.setTo(player.x, 540); /* @todo: find a good cam start point */
+    camTarget.setTo(430, -100);
+    cameraMidPos.setTo(430, -100); /* (player.x, 540) @todo: find a good cam start point */
     //this.game.camera.reset();
     setWorldScale( 1 /*Mode 1*/ );
-    worldScale=1.4;
+    worldScale=1.5;
     game.camera.bounds = null; /* Stop the Phaser builtin camera from messing with our zoom code */
 }
 
@@ -50,13 +52,39 @@ function updateMyCam(th) {
     screenSizeScaled = new Phaser.Point(game.width/worldScale,
                                             game.height/worldScale);
     /* calc middle point of camera in world coords */
-    var camTarget = new Phaser.Point(player.x, player.y);
-    if (camTarget.y+(screenSizeScaled.y/2) > screenBottomTarget) { /* Clamp the screen bottom for cosmetic reasons */
-      camTarget.y = (screenBottomTarget-(screenSizeScaled.y/2) );
+    if (gameMode>1) {
+      camTarget.setTo(player.x, player.y);
+      if (camTarget.y+(screenSizeScaled.y/2) > screenBottomTarget) { /* Clamp the screen bottom for cosmetic reasons */
+        camTarget.y = (screenBottomTarget-(screenSizeScaled.y/2) );
+      }
     }
-    cameraMidPos.x += (camTarget.x - cameraMidPos.x) * lerp; /* find the screen middle in World */
-    cameraMidPos.y += (camTarget.y - cameraMidPos.y) * lerp;
+    /* move towards camTarget */
+    var changex = (camTarget.x - cameraMidPos.x) * lerp; /* find the screen middle in World */
+    var changey = (camTarget.y - cameraMidPos.y) * lerp;
+    //if ( changex > camVelocity.x) { camVelocity.x += (lerp*2); changex = camVelocity.x }
+    //if ( changex < camVelocity.x) { camVelocity.x -= (lerp*2); changex = camVelocity.x }
+    //if ( changey > camVelocity.y) { camVelocity.y += (lerp*2); changey = camVelocity.y }
+    //if ( changey < camVelocity.y) { camVelocity.y -= (lerp*2); changey = camVelocity.y }
     
+    if (changex > 0) {
+      if (changex > camVelocity.x) { camVelocity.x += (lerp*2); }
+      if (changex < camVelocity.x) { camVelocity.x = changex; }
+    }
+    if (changex < 0) {
+      if (changex < camVelocity.x) { camVelocity.x -= (lerp*2); }
+      if (changex > camVelocity.x) { camVelocity.x = changex; }
+    }
+    if (changey > 0) {
+      if (changey > camVelocity.y) { camVelocity.y += (lerp*2); }
+      if (changey < camVelocity.y) { camVelocity.y = changey; }
+    }
+    if (changey < 0) {
+      if (changey < camVelocity.y) { camVelocity.y -= (lerp*2); }
+      if (changey > camVelocity.y) { camVelocity.y = changey; }
+    }
+
+    cameraMidPos.x += camVelocity.x; 
+    cameraMidPos.y += camVelocity.y;
 
     /* work out camera offset, based on Scale, and camera coords are for top left of camera */
     /* Camera middle - half screen width, allowing for scaling of screen too */
@@ -79,29 +107,6 @@ function updateMyCam(th) {
     
     /******** Parallax Background **********************************/
     th.background.myUpdate(game.world.pivot, screenSizeScaled, worldScale);
-    
-    /* Work out Camera Middle again, but this time it will include any Clamping */
-    //var newCamMid = new Phaser.Point(game.world.pivot.x + (screenSizeScaled.x /2),
-    //                                 game.world.pivot.y + (screenSizeScaled.y /2));
-    //
-    //var bgPercent = level.bgPercent;
-    ////var a=game.width / 900 ;
-    ///** A percentage of the main screen Scale will be the Backgrounds scale.
-    // ** small values = slow moving, distant looking background */
-    //var bgScale =  (1/worldScale) * reduceAScale(worldScale+1.0, bgPercent);
-    ///* the (1/worldscale) effectively cancels out the worldscale already in the translation */
-    //background.scale.set(  bgScale  );
-    //
-    //var bgOffset = level.bgOffset;
-    //background.position.set(newCamMid.x /* start from screen middle, this value doesnt get scaled */
-    //                      -(( (newCamMid.x*bgPercent) +bgOffset.x ) *bgScale),
-    //                   /* take off to pull bg to the left:
-    //                    *  a small percentage of camera position, so it moves slower
-    //                    *  add an offset to account for the black on left and top edges,
-    //                    *  then multiply by the backgrounds scale from above */
-    //                    
-    //                    (newCamMid.y) /* same for Y */
-    //                      -(( (newCamMid.y*bgPercent)+bgOffset.y ) * bgScale) );
 
 }
 
