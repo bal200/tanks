@@ -238,6 +238,19 @@
          stdDeviation="0.50267335"
          id="feGaussianBlur4224" />
     </filter>
+    <filter
+       inkscape:collect="always"
+       style="color-interpolation-filters:sRGB"
+       id="filter4372"
+       x="-0.12048861"
+       width="1.2409772"
+       y="-0.6335925"
+       height="2.267185">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="0.73863984"
+         id="feGaussianBlur4374" />
+    </filter>
   </defs>
   <sodipodi:namedview
      id="base"
@@ -246,9 +259,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="2.8"
-     inkscape:cx="466.14567"
-     inkscape:cy="154.86257"
+     inkscape:zoom="1.4"
+     inkscape:cx="288.4074"
+     inkscape:cy="227.23206"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -258,7 +271,8 @@
      inkscape:window-x="600"
      inkscape:window-y="50"
      inkscape:window-maximized="0"
-     inkscape:snap-bbox="true">
+     inkscape:snap-bbox="true"
+     inkscape:snap-global="false">
     <inkscape:grid
        type="xygrid"
        id="grid4195" />
@@ -346,14 +360,6 @@
        sodipodi:open="true"
        inkscape:export-xdpi="62.627907"
        inkscape:export-ydpi="62.627907" />
-    <path
-       style="opacity:1;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:2.4000001;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;filter:url(#filter4426)"
-       d="m 370.25334,962.36133 0,6.74658 7.23404,0 0.2071,0 3.32018,0 c 2.06119,0 9.02969,-1.58949 9.02969,-3.45828 0,-1.8688 -6.9685,-3.2883 -9.02969,-3.2883 l -3.32018,0 -0.2071,0 z"
-       id="rect4243"
-       inkscape:connector-curvature="0"
-       inkscape:export-xdpi="56.395412"
-       inkscape:export-ydpi="56.395412"
-       sodipodi:nodetypes="ccccsssccc" />
     <rect
        style="opacity:1;fill:#008e00;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:2.4000001;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;filter:url(#filter4446)"
        id="rect4252"
@@ -542,5 +548,20 @@
          x="455"
          y="947.36218"
          style="-inkscape-font-specification:'sans-serif, Normal';font-family:sans-serif;font-weight:normal;font-style:normal;font-stretch:normal;font-variant:normal;font-size:13.75px;text-anchor:start;text-align:start;writing-mode:lr;line-height:100%;fill:#ffffff;fill-opacity:1;">FULL SCREEN</tspan></text>
+    <path
+       style="opacity:1;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:2.4000001;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;filter:url(#filter4426)"
+       d="m 370.25334,962.36133 0,6.74658 7.23404,0 0.2071,0 3.32018,0 c 2.06119,0 9.02969,-1.58949 9.02969,-3.45828 0,-1.8688 -6.9685,-3.2883 -9.02969,-3.2883 l -3.32018,0 -0.2071,0 z"
+       id="rect4243"
+       inkscape:connector-curvature="0"
+       inkscape:export-xdpi="56.395412"
+       inkscape:export-ydpi="56.395412"
+       sodipodi:nodetypes="ccccsssccc" />
+    <path
+       style="opacity:1;fill:#ffffff;fill-opacity:0.3137255;fill-rule:nonzero;stroke:none;stroke-width:2.4000001;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;filter:url(#filter4372)"
+       d="m 371.37002,966.09726 c 4.83771,-0.15026 10.44437,0.55209 14.71289,-1.21745 -4.68216,-2.23093 -9.80377,-1.36943 -14.71289,-1.52864 z"
+       id="path4209"
+       inkscape:connector-curvature="0"
+       transform="matrix(1.0122029,0,0,0.70510976,-5.7579958,284.17243)"
+       sodipodi:nodetypes="cccc" />
   </g>
 </svg>

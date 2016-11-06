@@ -12,9 +12,8 @@
         <script src="bullets.js"></script>
         <script src="mycam.js"></script>
         <script src="learning.js"></script>
-    </head>
-    <body>
     <script type="text/javascript">
+
 
 var game = new Phaser.Game(900, 600, Phaser.WEBGL, 'Tanks');
 var BasicGame = function(game) {}; /* Class */
@@ -48,6 +47,7 @@ var level = {  /* Settings for this particular level in the game */
   }               /** background neatly covers the whole world. */ 
 }
 
+//// Joystick.prototype.updateJoypadBarrel = function(/* gun? */) {
 BasicGame.Boot.prototype = 
 {
   preload: function() {
@@ -107,8 +107,12 @@ BasicGame.Boot.prototype =
     createLand(this);
 
     /******* Player ********************/
-    createPlayer(this);
+    this.player = new Player(430, 616);
+    //createPlayer(this);
+    setupEnemy(this);
     
+    game.world.setBounds(level.x, level.y, level.x2-level.x, level.y2-level.y);
+
     /************ Bullets *****************/
     createBullets(this);
     
@@ -118,8 +122,12 @@ BasicGame.Boot.prototype =
     this.joystick = null; /* not yet */
     
     
-    //if (joystick) game.world.bringToTop(joystick);
-    /* Touch screen event handlers */
+    /******* Keys *****************/
+    this.cursors = this.input.keyboard.createCursorKeys();
+    fireButton = this.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+    fireButton.onDown.add(fire, this);
+
+    /****** Touch screen event handlers *****/
     game.input.onDown.add(pointerOnDown, this);
     game.input.onUp.add(pointerOnUp, this);
     
@@ -143,12 +151,15 @@ BasicGame.Boot.prototype =
   {
     
     /************ Player **************************************/
-    updatePlayer(this);
+    //updatePlayer(this);
+    game.physics.arcade.collide(enemy, bullets, tankToBulletsHandler, null, this);
+    game.physics.arcade.collide(this.player.tank, bullets, tankToBulletsHandler, null, this);
 
+    
     /************ Gun *****************************************/
     if (this.joystick) { if (this.joystick.method==1) {
-      gun.angle += gun.angleVelocity;
-      gun.power += gun.powerVelocity;
+      this.player.gun.angle += this.player.gun.angleVelocity;
+      this.player.gun.power += this.player.gun.powerVelocity;
     }}
     /********** Foreground ************************************/
     updateLand(this);
@@ -161,30 +172,34 @@ BasicGame.Boot.prototype =
    
    
     /********** Joystick ***************************************/
-    this.screenFix.update();
-    /* position joystick in screen coords, rather than world coords. */
-    //if (this.joystick!=null) {
-    //  var p = screenToWorld( { x:this.joystick.center.x, y:game.height-this.joystick.center.y } );
-    //  this.joystick.x = p.x; this.joystick.y = p.y;
-    //  this.joystick.scale.set(screenToWorldScale(1));
-    //}
-    
-    //p = screenToWorld( { x:game.width-60, y:game.height-60 } );
-    //this.button.x = p.x; this.button.y = p.y;
-    //this.button.scale.set(screenToWorldScale(0.6));
-    
-    //p = screenToWorld( { x:60, y:game.height-230 } );
-    //drawButton.x = p.x; drawButton.y = p.y;
-    //drawButton.scale.set(screenToWorldScale(0.12));
+    this.screenFix.update(); /* buttons are fixed to screen to make them stationary, this realigns them after scrolling/zooming */
+
     
     p = screenToWorld( { x:(game.width/2), y:(game.height/2) } );
     titlePage.x = p.x; titlePage.y = p.y;
     titlePage.scale.set(screenToWorldScale(1.0));
     titlePage.bringToTop();
     
-    //p = screenToWorld( { x:10, y:10 } );
-    //fullScreenButton.x = p.x; fullScreenButton.y = p.y;
-    //fullScreenButton.scale.set(screenToWorldScale(1.0));
+    /************ Keyboard ********************************/
+    //player.body.velocity.x=0;
+    //player.body.velocity.y=0;
+    //enemy.body.velocity.x=0;
+    //enemy.body.velocity.y=0;
+    var tank=this.player.tank;
+    if (this.cursors.left.isDown) {
+        tank.body.velocity.x = -tank.speed; }
+    else if (this.cursors.right.isDown) {
+        tank.body.velocity.x = tank.speed; }
+    if (this.cursors.up.isDown) {
+        tank.body.velocity.y = -tank.speed; }
+    else if (this.cursors.down.isDown) {
+        tank.body.velocity.y = tank.speed; }
+    // zoom
+    if (game.input.keyboard.isDown(Phaser.Keyboard.Q)) {
+        worldScale += 0.01; }
+    else if (game.input.keyboard.isDown(Phaser.Keyboard.A)) {
+        worldScale -= 0.01;
+    }
 
   }, 
   render: function()
@@ -193,15 +208,15 @@ BasicGame.Boot.prototype =
                       +"cam "+game.camera.x+","+game.camera.y+" "
                       +"myCam "+game.world.pivot.x.toFixed(0)+","+game.world.pivot.y.toFixed(0)+" "
                       +"scale "+worldScale.toFixed(2)+" "
-                      +"player "+player.x.toFixed(0)+","+player.y.toFixed(0)
-                      +" gun "+gun.angle.toFixed(1)+"a "+gun.power.toFixed(1)+"p"
+                      +"player "+this.player.tank.x.toFixed(0)+","+this.player.tank.y.toFixed(0)
+                      +" gun "+this.player.gun.angle.toFixed(1)+"a "+this.player.gun.power.toFixed(1)+"p"
                       +" scrn "+game.scale.width.toFixed(1)+","+game.scale.height.toFixed(1)+""
                       || '--', 2, 14, "#00ff00");   
   },
   startGame: function() {
     /* After the title screen, called when user presses Play button */
     gameMode = 2; /* Start Game */
-    this.joystick=new Joystick(); //createJoystick();
+    this.joystick=new Joystick(this.player); //createJoystick();
     this.screenFix.add( this.joystick, this.joystick.center.x, -this.joystick.center.y, 1.0 );
     
     createFireButton(this);
@@ -244,9 +259,10 @@ ScreenFix.prototype.remove = function( itm ) {
 /**************************************************************************************/
 /************************** JOYSTICK CLASS ********************************************/
 /**************************************************************************************/
-var Joystick = function () {
+var Joystick = function ( player ) {
     Phaser.Group.call(this, game); /* create a Group, the parent Class */
     //joystick = game.add.group();
+    this.gun = player.gun; /* keep a ref to the gun we're controlling */
     this.method=3;
     this.long = 170; this.shrt = 40;
     this.center = {x:10,y:10}; /* the centre here means the segments centre, which is below left of the sprite */
@@ -257,7 +273,8 @@ var Joystick = function () {
     this.add( this.joystickBack );
     
     this.barrel = game.add.group();
-    this.barrel.angle = gun.angle;
+    this.barrel.angle = this.gun.angle;
+//alert("th.player.gun.angle; " + th.player.gun.angle);
     this.barrelImg = game.add.sprite(0,0,'barrel'); 
     this.barrelImg.anchor.set(0.5, 1.0);
     this.barrel.add(this.barrelImg);
@@ -267,18 +284,19 @@ var Joystick = function () {
     this.barrel.add(this.barrelBar);
     
     this.add( this.barrel );
-    this.updateJoypadBarrel(); 
+    this.updateJoypadBarrel();
+//alert("th.gun.angle; " + th.gun.angle);
 }
 inheritPrototype(Joystick, Phaser.Group);
 
 /* set the joystick to reflect the current gun position */
-Joystick.prototype.updateJoypadBarrel = function(/* gun? */) {
+Joystick.prototype.updateJoypadBarrel = function() {
     /* Draw the joypads gun-barrel graphic */
-    this.barrel.angle = gun.angle;
-    var vec = angleToVector( gun.angle );
+    this.barrel.angle = this.gun.angle;
+    var vec = angleToVector( this.gun.angle );
     this.barrel.x = vec.x * (this.shrt );
     this.barrel.y = vec.y * (this.shrt );
-    this.barrelBar.length = ((gun.power-90)/(850-90) * 130);
+    this.barrelBar.length = ((this.gun.power-90)/(850-90) * 130);
     this.barrelBar.crop(new Phaser.Rectangle(0,  130-this.barrelBar.length,
                                         15, 130 ));
 }
@@ -295,7 +313,7 @@ function titlePageStartPress() {
                            }, this);
 
   /* Cause the camera to tween down from the sky to the tank */
-  camTarget.setTo(player.x, player.y);
+  camTarget.setTo(this.player.tank.x, this.player.tank.y);
   //this.startGame();
   
 }
@@ -375,34 +393,34 @@ function pointerOnMove(p) {
       var dist = start.distance(s);
       var deltaX = s.x - start.x;
       var deltaY = s.y - start.y;
-      deltaX = (deltaX / 60) * player.speed;
-      deltaY = (deltaY / 60) * player.speed;
+      deltaX = (deltaX / 60) * this.player.tank.speed;
+      deltaY = (deltaY / 60) * this.player.tank.speed;
       //this.player.body.velocity.x = deltaX;
       //this.player.body.velocity.y = deltaY;
-      this.gun.angleVelocity += deltaX/4000;
-      this.gun.powerVelocity += -deltaY/1000;
+      this.player.gun.angleVelocity += deltaX/4000;
+      this.player.gun.powerVelocity += -deltaY/1000;
     }
     if (this.joystick.method==2) {
       var lastDeltaX = s.x - last.x;
       var lastDeltaY = s.y - last.y;
-      gun.angle += lastDeltaX * 0.50;
-      gun.power -= lastDeltaY * 2;
+      this.player.gun.angle += lastDeltaX * 0.50;
+      this.player.gun.power -= lastDeltaY * 2;
     }
     if (this.joystick.method==3) {
       var angle = Phaser.Math.radToDeg(Phaser.Math.angleBetweenPoints(centre, s));
       var dist = centre.distance( s );
       
       if (dist > 20)
-        gun.angle += (angle - this.joystick.lastAngle);
-      gun.power += (dist - this.joystick.lastDist) *6;
+        this.player.gun.angle += (angle - this.joystick.lastAngle);
+      this.player.gun.power += (dist - this.joystick.lastDist) *6;
       this.joystick.lastAngle = angle;      
       this.joystick.lastDist = dist;
     }
     //Phaser.Math.wrapAngle();
     //gun.angle = Phaser.math.clamp(gun.angle, -135, 135);
-    if (gun.angle>135) gun.angle = 135;
-    if (gun.angle<-135) gun.angle = -135;
-    gun.power = Phaser.Math.clamp(gun.power, 90, 850);
+    if (this.player.gun.angle>135) this.player.gun.angle = 135;
+    if (this.player.gun.angle<-135) this.player.gun.angle = -135;
+    this.player.gun.power = Phaser.Math.clamp(this.player.gun.power, 90, 850);
     
     /* Draw the joypads gun-barrel graphic */
     this.joystick.updateJoypadBarrel();
@@ -443,7 +461,6 @@ function pointerOnUp(p) {
   }
 }
 
-
 if (typeof Object.create !== 'function') {
     Object.create = function (o) {
         function F() {
@@ -459,6 +476,7 @@ function inheritPrototype(childObject, parentObject) {
 }
 
 
+
 game.state.add('Boot', BasicGame.Boot);
 game.state.start('Boot');
 
@@ -467,5 +485,7 @@ game.state.start('Boot');
 
 
     </script>
+        </head>
+    <body>
     </body>
 </html>

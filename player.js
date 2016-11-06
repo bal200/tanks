@@ -1,41 +1,52 @@
 
-var player;
-var cursors;    /* keyboard inputs */
+//var player;
+//var cursors;    /* keyboard inputs */
 var firebutton; /* space bar */
 
 var enemy;
 
 
-/************ Gun *****************/
-gun = {
-  angle : 60,
-  angleVelocity:0,
-  power : 210,
-  powerVelocity:0
-}
 
-/************ Player ********************************/
 
-function createPlayer (th) {
-  
+/************************ PLAYER CLASS ********************************************/
+/**************************************************************************************/
+
+
+var Player = function(x,y) {
+//function createPlayer (th) {
     /******* Player ********************/
-    player = game.add.sprite(430,616,'tank2_right'); //game.add.group();
-    player.speed = 400;
-    player.anchor.set(0.5, 0.5);
-    //this.player.x=430; this.player.y=400;
-    player.enableBody = true;
-    player.physicsBodyType = Phaser.Physics.ARCADE;
-    game.physics.enable(player, Phaser.Physics.ARCADE);
-    player.body.allowGravity = false;
-    player.body.drag = {x:10000,y:10000};
-    player.body.setSize(54,40, 10,5);
+    //Phaser.Sprite.call(this, game, x, y, 'tank2_right'); /* create a Sprite, the parent Class */
+
+    Phaser.Group.call(this, game); /* create a Group, the parent Class */
+
+    //this.x=x; this.y=y;
+    this.tank = game.add.sprite(x,y,'tank2_right');  
+    this.tank.anchor.set(0.5, 0.5);
+    this.tank.speed = 400;
+    this.add( this.tank );
     
-    player.scale.set(0.5);
+    
+    this.tank.enableBody = true;
+    this.tank.physicsBodyType = Phaser.Physics.ARCADE;
+    game.physics.enable(this.tank, Phaser.Physics.ARCADE);
+    this.tank.body.allowGravity = false;
+    this.tank.body.drag = {x:10000,y:10000};
+    this.tank.body.setSize(54,40, 10,5);
+    
+    this.tank.scale.set(0.5);
+    
+    /************ Gun *****************/
+    this.gun = {
+      angle : 60,
+      angleVelocity:0,
+      power : 210,
+      powerVelocity:0
+    }
      
-    //var playerGraphics = game.add.graphics();
-    //playerGraphics.beginFill(0x00ffff);
-    //playerGraphics.drawCircle(0, 0, 16);
-    //this.player.add(playerGraphics);
+}
+inheritPrototype(Player, Phaser.Group);
+
+function setupEnemy(th){
     
     /******* Enemy Tank ********************/
     enemy = game.add.sprite(1400,607,'tank_left'); //game.add.group();
@@ -50,43 +61,12 @@ function createPlayer (th) {
     enemy.body.setSize(48,62, 16,5);
     
     
-    /******* Keys *****************/
-    cursors = th.input.keyboard.createCursorKeys();
-    fireButton = th.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
-    fireButton.onDown.add(fire, th);
-    
-    game.world.setBounds(level.x, level.y, level.x2-level.x, level.y2-level.y);
     
 }
 
+//function updatePlayer( th ) {
+//}
 
-function updatePlayer( th ) {
-  
-    game.physics.arcade.collide(enemy, bullets, tankToBulletsHandler, null, this);
-    game.physics.arcade.collide(player, bullets, tankToBulletsHandler, null, this);
-
-    /************ Player ********************************/
-    //player.body.velocity.x=0;
-    //player.body.velocity.y=0;
-    //enemy.body.velocity.x=0;
-    //enemy.body.velocity.y=0;
-    if (cursors.left.isDown) {
-        player.body.velocity.x = -player.speed; }
-    else if (cursors.right.isDown) {
-        player.body.velocity.x = player.speed; }
-    if (cursors.up.isDown) {
-        player.body.velocity.y = -player.speed; }
-    else if (cursors.down.isDown) {
-        player.body.velocity.y = player.speed; }
-    // zoom
-    if (game.input.keyboard.isDown(Phaser.Keyboard.Q)) {
-        worldScale += 0.01; }
-    else if (game.input.keyboard.isDown(Phaser.Keyboard.A)) {
-        worldScale -= 0.01;
-    }
-    
-    
-}
 
 
 /**************** Enemy Tank **********************/
@@ -148,3 +128,19 @@ function enemyDrawRandomDefence() {
 }
 
 
+
+
+
+if (typeof Object.create !== 'function') {
+    Object.create = function (o) {
+        function F() {
+        }
+        F.prototype = o;
+        return new F();
+    };
+}
+function inheritPrototype(childObject, parentObject) {
+    var copyOfParent = Object.create(parentObject.prototype);
+    copyOfParent.constructor = childObject;
+    childObject.prototype = copyOfParent;
+}

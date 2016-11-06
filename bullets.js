@@ -26,7 +26,7 @@ function createBullets(th) {
       b.whos=0; /* 1=Players, 2=Enemies */
       b.events.onOutOfBounds.add(function(bullet) {
         bullet.kill();
-      }, this);
+      }, th);
   }
   
   /****** Trace Lines ****************/
@@ -53,7 +53,8 @@ function createBullets(th) {
 
 
 function updateBullets(th) {
-  
+  var player = th.player;
+  var gun = th.player.gun;  /* just to shorten some variable names */
   /********** Bullets ***************************************/
   /* check if any of the bullets have hit the destructable landscape */
   checkBulletsToLand(bullets, bitmap);
@@ -71,10 +72,10 @@ function updateBullets(th) {
     var startNudge = 4+ ((new Date).getSeconds() % 2) * 10;
     
           var vec = new Phaser.Point(0,-1);
-          vec = vec.rotate(0,0, gun.angle, true);
+          vec = vec.rotate(0,0, player.gun.angle, true);
           
                               /* end of gun barrel */
-    var p = new Phaser.Point(player.x +(vec.x*50), player.y +(vec.y*50));
+    var p = new Phaser.Point(player.tank.x +(vec.x*50), player.tank.y +(vec.y*50));
     var last = new Phaser.Point(p.x, p.y);
     var deltaX = (vec.x * gun.power) / 100;
     var deltaY = (vec.y * gun.power) / 100;
@@ -141,7 +142,10 @@ function updateBullets(th) {
 }
 
 
-function fire(th) {
+function fire() {
+  var player = this.player;
+  var gun = this.player.gun;  /* just to shorten some variable names */
+
 //if (game.time.now > bulletTime)
 //{
     drawOff(); /* turn off drawing mode now were shootin' */
@@ -150,7 +154,7 @@ function fire(th) {
     if (bullet) {
       var vec = angleToVector( gun.angle );
       
-      bullet.reset(player.x + (vec.x*50), player.y + (vec.y*50));
+      bullet.reset(player.tank.x + (vec.x*50), player.tank.y + (vec.y*50));
       bullet.body.velocity.x = vec.x * gun.power;
       bullet.body.velocity.y = vec.y * gun.power; 
       bullet.whos=1;/* the player fired it */

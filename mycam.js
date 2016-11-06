@@ -1,19 +1,24 @@
 
 
 /***** My Camera initialisation **********/
-var cameraMidPos = new Phaser.Point(0, 0);  /* Current middle of My camera view */
-var worldScale = 1.0;   /* right at game begining, this 1.3 will cause a slow zoom out to 1.0 */
-var worldScaleTarget = 1.0;
-var lerp = 0.1;        // Camera movement amount of damping, lower values = smoother camera movement
-var scaleLerp = 0.05;  /* amount of damping on scale changes */
-var camTarget = new Phaser.Point(0,0); /* where the cam shold be now.  it will Lerp towards this slowly */
-var camVelocity = new Phaser.Point(0,0); /* speed the cameraMidPos is moving towards cam Target */
-
-var scaleMode=1;
-var screenBottomTarget;
-var scaleModeTimeout=null;
-var scaleModeChangeWaiting=0;
-var screenSizeScaled;
+//var MyCam = function() {
+  var cameraMidPos = new Phaser.Point(0, 0);  /* Current middle of My camera view */
+  var worldScale = 1.0;   /* right at game begining, this 1.3 will cause a slow zoom out to 1.0 */
+  var worldScaleTarget = 1.0;
+  var lerp = 0.1;        // Camera movement amount of damping, lower values = smoother camera movement
+  var scaleLerp = 0.05;  /* amount of damping on scale changes */
+  var camTarget = new Phaser.Point(0,0); /* where the cam shold be now.  it will Lerp towards this slowly */
+  var camVelocity = new Phaser.Point(0,0); /* speed the cameraMidPos is moving towards cam Target */
+  
+  var scaleMode=1;
+  var screenBottomTarget;
+  var scaleModeTimeout=null;
+  var scaleModeChangeWaiting=0;
+  var screenSizeScaled;
+  
+  
+  
+//}
 
 function createMyCam(th) {
     
@@ -53,7 +58,7 @@ function updateMyCam(th) {
                                             game.height/worldScale);
     /* calc middle point of camera in world coords */
     if (gameMode>1) {
-      camTarget.setTo(player.x, player.y);
+      camTarget.setTo(th.player.tank.x, th.player.tank.y);
       if (camTarget.y+(screenSizeScaled.y/2) > screenBottomTarget) { /* Clamp the screen bottom for cosmetic reasons */
         camTarget.y = (screenBottomTarget-(screenSizeScaled.y/2) );
       }
