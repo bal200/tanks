@@ -2,21 +2,24 @@
 /****** Bullets and Trace markers ************/
 
 /***** Bullets **********/
-var bulletTime=0;
-var bullets;
-var trace;
-var traceOn=false;
-var explosions;
 
-function createBullets(th) {
+var Bullets = function (th) {
+//function createBullets(th) {
+  Phaser.Group.call(this, game); /* create a Group, the parent Class */
+  //bullets = game.add.group();
 
-  bullets = game.add.group();
-  bullets.enableBody = true;
-  bullets.physicsBodyType = Phaser.Physics.ARCADE;
+  this.enableBody = true;
+  this.physicsBodyType = Phaser.Physics.ARCADE;
+
+  this.bulletTime=0;
+//var bullets;
+//var trace;
+  this.traceOn=false;
+//var explosions;
 
   for (var i = 0; i < 40; i++)
   {
-      var b = bullets.create(0, 0, 'bullet');
+      var b = this.create(0, 0, 'bullet');
       b.name = 'bullet' + i;
       b.exists = false;
       b.visible = false;
@@ -28,52 +31,53 @@ function createBullets(th) {
         bullet.kill();
       }, th);
   }
-  
+
   /****** Trace Lines ****************/
-  trace = game.add.group();
-  for (var i = 0; i < 100; i++)
+  this.trace = game.add.group();
+  for ( i = 0; i < 100; i++)
   {
-      var t = trace.create(0, 0, 'trace');
+      var t = this.trace.create(0, 0, 'trace');
       t.name = 'trace' + i;
       t.exists = false;
       t.visible = false;
       t.anchor.set(0.5, 0.5);
   }
-  
+
   /******* Explosions group ********/
-  explosions = game.add.group();
-  explosions.createMultiple(10, 'boom');
-  explosions.forEach(function(exp) {
+  this.explosions = game.add.group();
+  this.explosions.createMultiple(10, 'boom');
+  this.explosions.forEach(function(exp) {
     exp.anchor.x = 0.5; exp.anchor.y = 0.5;
     exp.animations.add('boom');
   });
 
 
-}
+};
+inheritPrototype(Bullets, Phaser.Group);
 
 
-function updateBullets(th) {
-  var player = th.player;
-  var gun = th.player.gun;  /* just to shorten some variable names */
+Bullets.prototype.updateBullets = function( player, bitmap ) {
+  //var player = th.player;
+  var gun = player.gun;  /* just to shorten some variable names */
   /********** Bullets ***************************************/
   /* check if any of the bullets have hit the destructable landscape */
-  checkBulletsToLand(bullets, bitmap);
+  this.checkBulletsToLand( bitmap );
   /* set the bullets angles to their direction of travel */
-  bullets.forEachExists(function(bullet) {
+  this.forEachExists(function(bullet) {
     bullet.angle = Phaser.Math.radToDeg(
                    Phaser.Math.angleBetween(0,0, bullet.body.deltaX(), bullet.body.deltaY()));
   }, this);
-  
-  
-  
+
+
+
   /********** Trace Lines ************************************/
-  if (bitmap && traceOn) {
+  if (bitmap && this.traceOn) {
     /* this will animate the trace line, by slightly moving the start point every second */
-    var startNudge = 4+ ((new Date).getSeconds() % 2) * 10;
-    
+    var startNudge = 4+ ((new Date()).getSeconds() % 2) * 10;
+
           var vec = new Phaser.Point(0,-1);
           vec = vec.rotate(0,0, player.gun.angle, true);
-          
+
                               /* end of gun barrel */
     var p = new Phaser.Point(player.tank.x +(vec.x*50), player.tank.y +(vec.y*50));
     var last = new Phaser.Point(p.x, p.y);
@@ -91,7 +95,7 @@ function updateBullets(th) {
       var t = trace.next(); /* t is our next trace dot sprite */
       if (collision){
         t.exists=false; //t.visible=false; /* we're finished, but we still must erase all the remaining dots */
-        
+
       }else{
         t.reset(p.x, p.y); /* place the next dot on the line */
         t.angle = Phaser.Math.radToDeg(
@@ -109,37 +113,15 @@ function updateBullets(th) {
         }while(Math.abs(last.distance(p)) < 20);
       }
     }
-    
+
     /* jump to different zoom points, depending on where the trace marks are pointing */
     var newScale=1;
     if (p.x > 800) newScale=2;
     if (p.x > 1600 && p.y<970) newScale=3;
     changeScaleMode(newScale);
-/*    if (newScale==2) {
-      if(trace.lastWorldScale==1) {
-        setWorldScale(2);
-        if (trace.changeWorldScaleTimeout) clearTimeout(trace.changeWorldScaleTimeout);
-      }
-      trace.lastWorldScale=2;
-    }else if (newScale==3) {
-      if(trace.lastWorldScale==1) {
-        setWorldScale(2);
-        if (trace.changeWorldScaleTimeout) clearTimeout(trace.changeWorldScaleTimeout);
-      }
-      trace.lastWorldScale=2;
-    }else{
-      if (trace.lastWorldScale==2) {
-          trace.changeWorldScaleTimeout=setTimeout(function(){
-            setWorldScale(1);
-            trace.changeWorldScaleTimeout=null;
-          }, 3000);
-      }
-      trace.lastWorldScale=1;
-    }
-*/
   }
-  
-}
+
+};
 
 
 function fire() {
@@ -153,10 +135,10 @@ function fire() {
     var bullet = bullets.getFirstExists(false);
     if (bullet) {
       var vec = angleToVector( gun.angle );
-      
+
       bullet.reset(player.tank.x + (vec.x*50), player.tank.y + (vec.y*50));
       bullet.body.velocity.x = vec.x * gun.power;
-      bullet.body.velocity.y = vec.y * gun.power; 
+      bullet.body.velocity.y = vec.y * gun.power;
       bullet.whos=1;/* the player fired it */
       //bulletTime = game.time.now + 200;
       var angDrift = game.rnd.between(-1, +2);
@@ -170,9 +152,10 @@ function fire() {
 
 /* check through the group of bullets to see if any have hit our foreground land,
  *  using the bitmap getPixel command to look for solid ground */
-function checkBulletsToLand(bullets, bitmap) {
+Bullets.prototype.checkBulletsToLand = function ( bitmap) {
+//function checkBulletsToLand(bullets, bitmap) {
   var over=1;
-  bullets.forEachExists(function(bullet,bitmap) {
+  this.forEachExists(function(bullet,bitmap) {
     var x = Math.floor(bullet.x);
     var y = Math.floor(bullet.y);
     /* screen zoom out trigger */
@@ -201,9 +184,9 @@ function checkBulletsToLand(bullets, bitmap) {
     bullet.lastX = x;
     bullet.lastY = y;
   }, this, bitmap);
-  
+
   changeScaleMode(over);
-  
+
 }
 
 function tankToBulletsHandler(tank, bullet) {
@@ -216,9 +199,9 @@ function turnTraceOn() {
 }
 function turnTraceOff() {
   if (traceOn==false) return;
-  for (n=0; n<100; n++) { 
-    var t = trace.next(); 
-    t.exists=false; 
+  for (n=0; n<100; n++) {
+    var t = trace.next();
+    t.exists=false;
   }
   traceOn=false;
 }

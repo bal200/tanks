@@ -44,11 +44,11 @@ var level = {  /* Settings for this particular level in the game */
                       ** Small values = a slow moving distant background */
   bgOffset:{      /** Because the background maths is calculated from the screen middle, you may need to */
     x:400, y:470  /** pull the background to the left and to the top. Tweak this to make sure the      */
-  }               /** background neatly covers the whole world. */ 
+  }               /** background neatly covers the whole world. */
 }
 
 //// Joystick.prototype.updateJoypadBarrel = function(/* gun? */) {
-BasicGame.Boot.prototype = 
+BasicGame.Boot.prototype =
 {
   preload: function() {
     game.time.advancedTiming = true;
@@ -61,7 +61,7 @@ BasicGame.Boot.prototype =
     game.load.image("tank2_right", "assets/tank2_fromVector2.png");
     game.load.image("bullet", "assets/bullet.png");
     game.load.image("trace", "assets/trace.png");
-    
+
     game.load.image("joystick", "assets/joystick.png");
     game.load.image("joypad", "assets/touchpad.png");
     game.load.image("barrel", "assets/barrel.png");
@@ -69,59 +69,60 @@ BasicGame.Boot.prototype =
 
     game.load.image("pencil", "assets/pencil.png");
     game.load.spritesheet("boom", "assets/boom32wh12.png",32,32,12);
-    
+
     game.load.tilemap('tilemap', 'assets/tilemap.json', null, Phaser.Tilemap.TILED_JSON);
     game.load.image('jungletileset', 'assets/jungletileset_32x32.png');
-    
+
   },
 
   /**********  Create Function  ************************************************/
   /*****************************************************************************/
-	create: function() 
+	create: function()
 	{
     game.scale.fullScreenScaleMode = Phaser.ScaleManager.RESIZE;
     //game.scale.scaleMode = Phaser.ScaleManager.RESIZE;
 
     game.physics.startSystem(Phaser.Physics.ARCADE);
     game.physics.arcade.gravity.y = 200;
-    
+
     /******* Parallax Background ********/
     this.background = new Parallax(level.bgPercent, level.bgOffset);
     this.background.theImage = game.add.sprite(0, 0, 'background');
     this.background.add( this.background.theImage );
-    
+
     /******* Make some Clouds! **********/
     var cld=game.add.sprite(60, 300, 'cloud'); cld.alpha=0.4; cld.scale.set(0.6);
     game.add.tween(cld).to({x:1100}, 140000, null, true, 0, 0, false).onComplete.add(cloudLoop, this);
     this.background.add( cld );
-    
+
     cld=game.add.sprite(400, 200, 'cloud'); cld.alpha=0.5; cld.scale.set(0.8);
     game.add.tween(cld).to({x:1100}, 100000, null, true, 0, 0, false).onComplete.add(cloudLoop, this);
     this.background.add( cld );
-    
+
     cld=game.add.sprite(700, 310, 'cloud'); cld.alpha=0.6; cld.scale.set(0.7);
     game.add.tween(cld).to({x:1100}, 65000, null, true, 0, 0, false).onComplete.add(cloudLoop, this);
     this.background.add( cld );
-    
-    /*****  Foreground (Land) **********/    
+
+    /*****  Foreground (Land) **********/
     createLand(this);
+
+    /************ Bullets *****************/
+    //createBullets(this);
+    this.bullets = new Bullets(this);
 
     /******* Player ********************/
     this.player = new Player(430, 616);
     //createPlayer(this);
-    setupEnemy(this);
-    
+    //setupEnemy(this);
+    this.enemy = new Enemy(this.bullets, bitmap);
+
     game.world.setBounds(level.x, level.y, level.x2-level.x, level.y2-level.y);
 
-    /************ Bullets *****************/
-    createBullets(this);
-    
-    
     /****** Joystick ******************/
     this.screenFix = new ScreenFix(); /* adding buttons to screenFix will keep their position reletive to the screen */
     this.joystick = null; /* not yet */
-    
-    
+
+
     /******* Keys *****************/
     this.cursors = this.input.keyboard.createCursorKeys();
     fireButton = this.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
@@ -130,32 +131,32 @@ BasicGame.Boot.prototype =
     /****** Touch screen event handlers *****/
     game.input.onDown.add(pointerOnDown, this);
     game.input.onUp.add(pointerOnUp, this);
-    
+
     titlePage = game.add.button(game.width/2,game.height/2, 'titlepage', titlePageStartPress, this,0,0,0);
     titlePage.anchor.set(0.5,0.5);
     this.screenFix.add(titlePage, game.width/2, game.height/2, 1.0);
-    
+
     fullScreenButton = game.add.button(0,0, 'fullscreen', fullScreenModePress, this,0,0,0);
     this.screenFix.add(fullScreenButton, 10, 10, 1.0);
-    
-    
+
+
     /****** My Camera *****************/
     createMyCam(this);
-    
+
 
   },
 
   /**********  Update Function  ************************************************/
   /*****************************************************************************/
-  update: function() 
+  update: function()
   {
-    
+
     /************ Player **************************************/
     //updatePlayer(this);
-    game.physics.arcade.collide(enemy, bullets, tankToBulletsHandler, null, this);
-    game.physics.arcade.collide(this.player.tank, bullets, tankToBulletsHandler, null, this);
+    game.physics.arcade.collide(this.enemy, this.bullets, tankToBulletsHandler, null, this);
+    game.physics.arcade.collide(this.player.tank, this.bullets, tankToBulletsHandler, null, this);
 
-    
+
     /************ Gun *****************************************/
     if (this.joystick) { if (this.joystick.method==1) {
       this.player.gun.angle += this.player.gun.angleVelocity;
@@ -165,21 +166,21 @@ BasicGame.Boot.prototype =
     updateLand(this);
 
     /********** Bullets ***************************************/
-    updateBullets(this);
-    
+    this.bullets.updateBullets(this.player, bitmap);
+
     /********** My Camera **************************************/
     updateMyCam(this);
-   
-   
+
+
     /********** Joystick ***************************************/
     this.screenFix.update(); /* buttons are fixed to screen to make them stationary, this realigns them after scrolling/zooming */
 
-    
+
     p = screenToWorld( { x:(game.width/2), y:(game.height/2) } );
     titlePage.x = p.x; titlePage.y = p.y;
     titlePage.scale.set(screenToWorldScale(1.0));
     titlePage.bringToTop();
-    
+
     /************ Keyboard ********************************/
     //player.body.velocity.x=0;
     //player.body.velocity.y=0;
@@ -201,7 +202,7 @@ BasicGame.Boot.prototype =
         worldScale -= 0.01;
     }
 
-  }, 
+  },
   render: function()
   {
       game.debug.text(game.time.fps+"fps "
@@ -211,18 +212,18 @@ BasicGame.Boot.prototype =
                       +"player "+this.player.tank.x.toFixed(0)+","+this.player.tank.y.toFixed(0)
                       +" gun "+this.player.gun.angle.toFixed(1)+"a "+this.player.gun.power.toFixed(1)+"p"
                       +" scrn "+game.scale.width.toFixed(1)+","+game.scale.height.toFixed(1)+""
-                      || '--', 2, 14, "#00ff00");   
+                      || '--', 2, 14, "#00ff00");
   },
   startGame: function() {
     /* After the title screen, called when user presses Play button */
     gameMode = 2; /* Start Game */
     this.joystick=new Joystick(this.player); //createJoystick();
     this.screenFix.add( this.joystick, this.joystick.center.x, -this.joystick.center.y, 1.0 );
-    
+
     createFireButton(this);
     createDrawButton(this);
-
-    startEnemyLogic();
+    if (this.enemy)
+      this.enemy.startEnemyLogic();
   }
 };
 
@@ -245,7 +246,7 @@ ScreenFix.prototype.update = function() {
 ScreenFix.prototype.add = function( itm, x,y,scale ) {
   itm.screenFix = { x: x, y: y, scale: scale };
   this.item.push( itm );
-  
+
 }
 ScreenFix.prototype.remove = function( itm ) {
   for (var n=0; n<this.item.length; n++) {
@@ -266,23 +267,23 @@ var Joystick = function ( player ) {
     this.method=3;
     this.long = 170; this.shrt = 40;
     this.center = {x:10,y:10}; /* the centre here means the segments centre, which is below left of the sprite */
-    
+
     this.joystickBack = game.add.sprite(0,0, 'joypad');
     this.joystickBack.alpha = 0.4;
     this.joystickBack.anchor.set(0, 1.0);
     this.add( this.joystickBack );
-    
+
     this.barrel = game.add.group();
     this.barrel.angle = this.gun.angle;
 //alert("th.player.gun.angle; " + th.player.gun.angle);
-    this.barrelImg = game.add.sprite(0,0,'barrel'); 
+    this.barrelImg = game.add.sprite(0,0,'barrel');
     this.barrelImg.anchor.set(0.5, 1.0);
     this.barrel.add(this.barrelImg);
-    
+
     this.barrelBar = game.add.sprite(0,0,'barrelBar');
     this.barrelBar.anchor.set(0.5, 1.0);
     this.barrel.add(this.barrelBar);
-    
+
     this.add( this.barrel );
     this.updateJoypadBarrel();
 //alert("th.gun.angle; " + th.gun.angle);
@@ -315,7 +316,7 @@ function titlePageStartPress() {
   /* Cause the camera to tween down from the sky to the tank */
   camTarget.setTo(this.player.tank.x, this.player.tank.y);
   //this.startGame();
-  
+
 }
 /*************** Fire Button ********************/
 function createFireButton(th) {
@@ -353,7 +354,7 @@ function pointerOnDown(p) {
 
   var w=screenToWorld(p);
   var s=new Phaser.Point(p.x, p.y);
-  
+
   if (this.joystick) {
     var centre=new Phaser.Point(this.joystick.center.x, game.height-this.joystick.center.y);
     var dist = Math.abs(s.distance(centre));
@@ -388,7 +389,7 @@ function pointerOnMove(p) {
     var start=this.joystick.start;
     var centre=this.joystick.centre;
     var last = this.joystick.last;
-    
+
     if (this.joystick.method==1) {
       var dist = start.distance(s);
       var deltaX = s.x - start.x;
@@ -409,11 +410,11 @@ function pointerOnMove(p) {
     if (this.joystick.method==3) {
       var angle = Phaser.Math.radToDeg(Phaser.Math.angleBetweenPoints(centre, s));
       var dist = centre.distance( s );
-      
+
       if (dist > 20)
         this.player.gun.angle += (angle - this.joystick.lastAngle);
       this.player.gun.power += (dist - this.joystick.lastDist) *6;
-      this.joystick.lastAngle = angle;      
+      this.joystick.lastAngle = angle;
       this.joystick.lastDist = dist;
     }
     //Phaser.Math.wrapAngle();
@@ -421,13 +422,13 @@ function pointerOnMove(p) {
     if (this.player.gun.angle>135) this.player.gun.angle = 135;
     if (this.player.gun.angle<-135) this.player.gun.angle = -135;
     this.player.gun.power = Phaser.Math.clamp(this.player.gun.power, 90, 850);
-    
+
     /* Draw the joypads gun-barrel graphic */
     this.joystick.updateJoypadBarrel();
-    
+
     this.joystick.last = s;
   }
-  
+
   if (p.id == drawing.pointerId) {
     if (drawing.lastPos!=null){
       if (w.distance( drawing.lastPos ) > 10) {
@@ -435,13 +436,13 @@ function pointerOnMove(p) {
         bitmap.line(drawing.lastPos.x,drawing.lastPos.y, w.x, w.y, '#B020D0',  10);
         bitmap.update();
         bitmap.dirty = true;
-          
+
         drawing.lastPos.x=w.x; drawing.lastPos.y=w.y;
       }
     }
-    
+
   }
-  
+
 }
 
 function pointerOnUp(p) {
@@ -481,7 +482,7 @@ game.state.add('Boot', BasicGame.Boot);
 game.state.start('Boot');
 
 
- 
+
 
 
     </script>
