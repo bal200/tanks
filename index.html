@@ -36,6 +36,7 @@ var drawing = {
 //var barrel, barrelBar;
 var gameMode = 1; /* 1=Title Screen,  2=Game,  3=Win, 4=Loose */
 var titlePage;
+var count = 0;
 
 var level = {  /* Settings for this particular level in the game */
   x:0,  y:-1536,  /* world size */
@@ -104,17 +105,19 @@ BasicGame.Boot.prototype =
     this.background.add( cld );
 
     /*****  Foreground (Land) **********/
-    createLand(this);
+    //createLand(this);
+    this.land = new Land(this);
 
     /************ Bullets *****************/
     //createBullets(this);
-    this.bullets = new Bullets(this);
+    this.bullets = new Bullets( this.land /*this*/);
+    this.trace = new Trace();
 
     /******* Player ********************/
     this.player = new Player(430, 616);
     //createPlayer(this);
     //setupEnemy(this);
-    this.enemy = new Enemy(this.bullets, bitmap);
+    this.enemy = new Enemy(this.bullets, this.land);
 
     game.world.setBounds(level.x, level.y, level.x2-level.x, level.y2-level.y);
 
@@ -163,10 +166,13 @@ BasicGame.Boot.prototype =
       this.player.gun.power += this.player.gun.powerVelocity;
     }}
     /********** Foreground ************************************/
-    updateLand(this);
+    //updateLand(this);
+    this.land.updateLand();
 
     /********** Bullets ***************************************/
-    this.bullets.updateBullets(this.player, bitmap);
+    this.bullets.updateBullets();
+
+    this.trace.updateTrace(this.player, this.land);
 
     /********** My Camera **************************************/
     updateMyCam(this);
@@ -329,7 +335,7 @@ function createFireButton(th) {
 
 /************ Drawing Pencil Button **************/
 function createDrawButton(th) {
-    drawButton = game.add.button(0,0, 'pencil', drawPress, this,0,0,0);
+    drawButton = game.add.button(0,0, 'pencil', drawPress.bind(th), this,0,0,0);
     drawButton.alpha = 0.6;
     drawButton.anchor.setTo(0.5,0.5);
     th.screenFix.add(drawButton, 60, -230, 0.12);
@@ -337,7 +343,7 @@ function createDrawButton(th) {
 function drawPress() { /* the drawing pencil button pressed */
   if(drawMode==false)  {drawMode=true; drawButton.alpha=0.9}
   else  {drawMode=false; drawButton.alpha=0.6}
-  turnTraceOff();
+  this.trace.turnTraceOff();
 }
 function drawOff(){
   if (drawMode==true) {drawMode=false; drawButton.alpha=0.6;}
@@ -371,13 +377,14 @@ function pointerOnDown(p) {
     this.joystick.last = new Phaser.Point(s.x, s.y); /* the position it was last time */
     this.joystick.lastAngle = angle; /* the angle of this press */
     this.joystick.lastDist = centre.distance( s ); /* distance from the circles centre */
-    turnTraceOn(); /* show the trace lines now were aiming the gun */
+    this.trace.turnTraceOn(); /* show the trace lines now were aiming the gun */
   }else {
     if (drawMode==true){ /* the drawing a base on the screen mode is on */
       drawing.lastPos=w;
       game.input.addMoveCallback(pointerOnMove, this);
       drawing.pointerId = p.id;
-      bitmap.circle(w.x, w.y, 4.5, '#B020D0');
+      this.land.drawStartDefence(w.x, w.y, '#B020D0');
+      //bitmap.circle(w.x, w.y, 4.5, '#B020D0');
     }
   }
 }
@@ -432,12 +439,10 @@ function pointerOnMove(p) {
   if (p.id == drawing.pointerId) {
     if (drawing.lastPos!=null){
       if (w.distance( drawing.lastPos ) > 10) {
-        bitmap.circle(w.x, w.y, 4.5, '#B020D0');
-        bitmap.line(drawing.lastPos.x,drawing.lastPos.y, w.x, w.y, '#B020D0',  10);
-        bitmap.update();
-        bitmap.dirty = true;
-
-        drawing.lastPos.x=w.x; drawing.lastPos.y=w.y;
+        this.land.drawDefence(drawing.lastPos.x, drawing.lastPos.y,
+                              w.x, w.y, '#B020D0'); /* purple */
+        drawing.lastPos.x = w.x;
+        drawing.lastPos.y = w.y;
       }
     }
 

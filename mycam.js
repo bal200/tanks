@@ -9,23 +9,23 @@
   var scaleLerp = 0.05;  /* amount of damping on scale changes */
   var camTarget = new Phaser.Point(0,0); /* where the cam shold be now.  it will Lerp towards this slowly */
   var camVelocity = new Phaser.Point(0,0); /* speed the cameraMidPos is moving towards cam Target */
-  
+
   var scaleMode=1;
   var screenBottomTarget;
   var scaleModeTimeout=null;
   var scaleModeChangeWaiting=0;
   var screenSizeScaled;
-  
-  
-  
+
+
+
 //}
 
 function createMyCam(th) {
-    
+
     game.scale.onFullScreenChange.add(function() { /* re-do the scaling if we go full screen */
       setWorldScale();
     });
-    
+
     /****** My Camera *****************/
     camTarget.setTo(430, -100);
     cameraMidPos.setTo(430, -100); /* (player.x, 540) @todo: find a good cam start point */
@@ -36,9 +36,9 @@ function createMyCam(th) {
 }
 
 function updateMyCam(th) {
-  
+
     /********** My Camera **************************************/
-   
+
     /**** Work out the Scale factor ***/
     scaleDif = worldScaleTarget - worldScale;
     if (count < 240) { /* @todo: do timing better */
@@ -48,10 +48,10 @@ function updateMyCam(th) {
     }
     // set a minimum and maximum scale value
     worldScale = Phaser.Math.clamp(worldScale, 0.35, 2.0);
-    
+
     // set our world scale
     game.world.scale.set(worldScale);
-    
+
     /***** Work out Screen size and Screen Middle point ****/
     /* Note: screen width including scaling is (game.width/worldScale)  */
     screenSizeScaled = new Phaser.Point(game.width/worldScale,
@@ -70,7 +70,7 @@ function updateMyCam(th) {
     //if ( changex < camVelocity.x) { camVelocity.x -= (lerp*2); changex = camVelocity.x }
     //if ( changey > camVelocity.y) { camVelocity.y += (lerp*2); changey = camVelocity.y }
     //if ( changey < camVelocity.y) { camVelocity.y -= (lerp*2); changey = camVelocity.y }
-    
+
     if (changex > 0) {
       if (changex > camVelocity.x) { camVelocity.x += (lerp*2); }
       if (changex < camVelocity.x) { camVelocity.x = changex; }
@@ -88,7 +88,7 @@ function updateMyCam(th) {
       if (changey > camVelocity.y) { camVelocity.y = changey; }
     }
 
-    cameraMidPos.x += camVelocity.x; 
+    cameraMidPos.x += camVelocity.x;
     cameraMidPos.y += camVelocity.y;
 
     /* work out camera offset, based on Scale, and camera coords are for top left of camera */
@@ -106,10 +106,10 @@ function updateMyCam(th) {
 //    if (dif > 0) {
 //      cameraMidPos.y -= (dif * (lerp*2.0));
 //    }
-    
+
     //this.game.camera.focusOnXY(cameraMidPos.x, cameraMidPos.y);
 
-    
+
     /******** Parallax Background **********************************/
     th.background.myUpdate(game.world.pivot, screenSizeScaled, worldScale);
 
@@ -137,14 +137,14 @@ Parallax.prototype.myUpdate=function(pivot, screenScale, worldScale) {
     var bgScale = (1/worldScale) * reduceAScale(worldScale+1.0, this.bgPercent);
     /* the (1/worldscale) effectively cancels out the worldscale already in the translation */
     this.scale.set(  bgScale  );
-    
+
     this.position.set(camMid.x /* start from screen middle, this value doesnt get scaled */
                           -(( (camMid.x*this.bgPercent) +this.bgOffset.x ) *bgScale),
                        /* take off to pull bg to the left:
                         *  a small percentage of camera position, so it moves slower
                         *  add an offset to account for the black on left and top edges,
                         *  then multiply by the backgrounds scale from above */
-                        
+
                         (camMid.y) /* same for Y */
                           -(( (camMid.y*this.bgPercent)+this.bgOffset.y ) * bgScale) );
 }
@@ -177,7 +177,7 @@ function checkBulletForCameraMove(x,y) {
 function setWorldScale( i ) {
   if (i != null)  scaleMode = i;
   var a=game.width / 900 ;
-  
+
   if (scaleMode==1){worldScaleTarget=1.0*a; /* zoomed in on base */
              screenBottomTarget=730; }
   if (scaleMode==2){worldScaleTarget=0.59*a; /* zoomed out for firing */
