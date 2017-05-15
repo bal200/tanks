@@ -1,101 +1,161 @@
-
-/***** Foreground (Land) **********/
+ /***** Foreground (Land) **********/
 //var bitmap;
 //var tilemap, layer, foreground;
 //var count=0;
 
+/*  different bitmap TYPES: */
+var LAND = 1;
+var DRAWING = 2;
+var ENEMY_DRAWING = 3;
+
 var Land = function( th ) {
   //Phaser.Group.call(this, game); /* create a Group, the parent Class */
 
-  this.bitmap = null;  /* defined later */
-  this.foreground=null;
+  //this.bitmap = null;  /* the actual bitmap of destructable landscape */
+  //this.foreground=null; /* the large image to hold destructable landscape */
 
   this.tilemap = game.add.tilemap('tilemap');
   this.tilemap.addTilesetImage('jungletileset_32x32', 'jungletileset');
 
   this.layer = this.tilemap.createLayer('Tile Layer 1', this.tilemap.widthInPixels, this.tilemap.heightInPixels);
   this.layer.fixedToCamera = false;
+  this.layer.autoCull = false;
+  // this.layer.debug = true;
+  this.tilemap.setCollisionBetween(1,884); /* set all the tiles as things to bump into */
 
   this.th = th;
+  this.bitmaps = []; /* list of destructable squares over the map */
 };
-//inheritPrototype(Land, Phaser.Group);
 
-//function createLand(th) {
-//  tilemap = game.add.tilemap('tilemap');
-  //this.tilemap = new Phaser.Tilemap(game,'tilemap');
-                           /* name in map data,  cache image name to use */
-//  tilemap.addTilesetImage('jungletileset_32x32', 'jungletileset');
+/**** TYPE: 1=land tilemap,
+ ****       2=drawing bitmap
+ ****       3=enemys drawing bitmap */
+var Bitmap = function( x1,y1, x2,y2, type) {
+  this.x1 = x1; this.y1 = y1;
+  this.x2 = x2; this.y2 = y2;
+  if (type) this.type = type; else this.type=DRAWING; /*drawing bitmap*/
+  this.width = x2 - x1; this.height = y2 - y1;
+  this.bitmap = game.make.bitmapData(this.width, this.height);
+  //this.bitmap.draw( this.layer );
+  this.image = game.add.image(x1, y1, this.bitmap);
+  this.bitmap.update();
+  //this.layer.destroy();
+};
 
-//  layer = tilemap.createLayer('Tile Layer 1', tilemap.widthInPixels, tilemap.heightInPixels);
-//  layer.fixedToCamera = false;
+Land.prototype.tilemapToBitmap = function(tilemap, layer) {
+  var bitmap = new Bitmap(0,0, tilemap.widthInPixels, tilemap.heightInPixels, LAND /*land type*/);
+  bitmap.bitmap.draw( layer );
+  bitmap.bitmap.update();
+  layer.destroy();
 
-//  count = 0;
-//}
+  this.bitmaps.push(bitmap);
+
+  //if (this.th.joystick) game.world.bringToTop(this.th.joystick);
+  //game.world.bringToTop(this.th.button);
+  //game.world.bringToTop(drawButton);
+  //game.world.bringToTop(this.bitmaps[0].image);
+};
+
+Land.prototype.createBitmap = function(x1,y1, x2,y2, type) {
+  var bitmap = new Bitmap(x1,y1, x2,y2, type);
+  this.bitmaps.push(bitmap);
+};
+
+/* check for a pixel hit on all the bitmaps.  returns 1 if a land/drawing pixel exists at x,y */
+Land.prototype.getPixel = function(x,y) {
+  for (n=0; n<this.bitmaps.length; ++n){
+    var b=this.bitmaps[n];
+    if (b) {
+      if (x>b.x1 && x<b.x2 && y>b.y1 && y<b.y2) {
+        var rgba = b.bitmap.getPixel( x-b.x1, y-b.y1 );
+        if (rgba.a >0) return 1;
+        /* continue, as bitmaps can overlap, their maybe more */
+        //else return null;
+      }
+    }
+  }
+  return null;
+};
+/* check for a pixel hit on the bitmaps BUT exclude a bitmap (eg players own defences) */
+Land.prototype.getPixelExclude = function(x,y, excludeType) {
+  for (n=0; n<this.bitmaps.length; ++n){
+    var b=this.bitmaps[n];
+    if (b && (b.type != excludeType)) {
+      if (x>b.x1 && x<b.x2 && y>b.y1 && y<b.y2) {
+        var rgba = b.bitmap.getPixel( x-b.x1, y-b.y1 );
+        if (rgba.a >0) return 1;
+      }
+    }
+  }
+  return null;
+};
 
 Land.prototype.updateLand = function() {
-//function updateLand(th) {
-
-  /* Fade in from Black at start of Game */
-  if (count===0)
-    game.camera.flash(0x000000, 600, true);
-
+  count++;
   /* now the tilemap has been rendered, copy it to a bitmap instead, so our destructable landscape works */
-  if (++count == 5) {
-    this.bitmap = game.make.bitmapData(this.tilemap.widthInPixels, this.tilemap.heightInPixels);
-    this.bitmap.draw( this.layer );
-    this.foreground = game.add.image(0, 0, this.bitmap);
-    this.bitmap.update();
-    this.layer.destroy();
-    if (this.th.joystick) game.world.bringToTop(this.th.joystick);
-    //game.world.bringToTop(th.button);
+  if (count == 5) {
+    this.tilemapToBitmap(this.tilemap, this.layer);
+    //if (this.th.joystick) game.world.bringToTop(this.th.joystick);
+    //game.world.bringToTop(this.th.button);
     //game.world.bringToTop(drawButton);
+    //game.world.bringToTop(this.bitmaps[0].image);
+    game.world.sort(); /* put everything back in order of their Z depth */
   }
-
 };
 
 /* collision detect between land, and to bullet or trace */
-/* this colision function will exclude hits in the tanks own defence area */
+/* this collision function will exclude hits in the tanks own defence area */
 Land.prototype.checkBitmapForHit = function(x,y, who) {
-//function checkBitmapForHit(bitmap, x,y, who) {
-  var rgba = this.bitmap.getPixel(x, y);
-  if (rgba.a > 0) {
-    if (who==1) { /* its the players bullet */
-      if (x>140 && x<800 &&
-          y>300 && y<600) {  /* its in their defences, so ignore this hit */
-        return 0;
-      }
-      return 1;
-    }else if (who==2) { /* its the enemys bullet */
-      if (x>1050 && x<1800 &&
-          y>200 && y<600) {  /* its in their defences, so ignore this hit */
-        return 0;
-      }
-      return 1;
-    }
-  }
-  return 0;
+  var excludeType=0;
+  if (who==PLAYER) excludeType=DRAWING;
+  if (who==ENEMY) excludeType=ENEMY_DRAWING;
+
+  if (this.getPixelExclude(x, y, excludeType)) {
+    return 1;
+  }else
+    return 0;
 };
 
 /* Erase a Circle in the land to make a crater */
-Land.prototype.drawCrater = function( x,y, width) {
-  this.bitmap.blendDestinationOut();
-  this.bitmap.circle(x,y, width);
-  this.bitmap.blendReset();
-  this.bitmap.update();
-  this.bitmap.dirty = true;
+Land.prototype.drawCrater = function( x,y, width, excludeType) {
+  for (n=0; n<this.bitmaps.length; ++n){
+    var b=this.bitmaps[n];
+    if (b && (b.type != excludeType)) {
+      if (x>b.x1 && x<b.x2 && y>b.y1 && y<b.y2) {
+        b.bitmap.blendDestinationOut();
+        b.bitmap.circle(x-b.x1, y-b.y1, width);
+        b.bitmap.blendReset();
+        b.bitmap.update();
+        b.bitmap.dirty = true;
+      }
+    }
+  }
+};
+Land.prototype.drawStartDefence = function (x,y, colourString, type) {
+  for (n=0; n<this.bitmaps.length; ++n){
+    var b=this.bitmaps[n];
+    if (b && (b.type == type)) {
+      if (x>b.x1 && x<b.x2 && y>b.y1 && y<b.y2) {
+        b.bitmap.circle(x-b.x1, y-b.y1, 4.5, colourString);
+      }
+    }
+  }
+};
+Land.prototype.drawDefence = function (x1,y1, x2,y2, colourString, type) {
+  for (n=0; n<this.bitmaps.length; ++n){
+    var b=this.bitmaps[n];
+    if (b && (b.type == type)) {
+      if (x1>b.x1 && x1<b.x2 && y1>b.y1 && y1<b.y2) {
+        b.bitmap.circle(x2-b.x1, y2-b.y1, 4.5, colourString);
+        b.bitmap.line(x1-b.x1,y1-b.y1, x2-b.x1,y2-b.y1, colourString,  10);
+        b.bitmap.update();
+        b.bitmap.dirty = true;
+      }
+    }
+  }
 };
 
-Land.prototype.drawStartDefence = function (x,y, colourString) {
-  this.bitmap.circle(x, y, 4.5, colourString);
-  //this.bitmap.update();
-  //this.bitmap.dirty = true;
-};
-Land.prototype.drawDefence = function (x1,y1, x2,y2, colourString) {
-  this.bitmap.circle(x2, y2, 4.5, colourString);
-  this.bitmap.line(x1,y1, x2,y2, colourString,  10);
-  this.bitmap.update();
-  this.bitmap.dirty = true;
-};
+
 
 /******************* Clouds *****************************/
 

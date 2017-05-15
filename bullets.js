@@ -4,25 +4,20 @@
 /***** Bullets **********/
 
 var Bullets = function ( land ) {
-//function createBullets(th) {
   Phaser.Group.call(this, game); /* create a Group, the parent Class */
-  //bullets = game.add.group();
 
   this.enableBody = true;
   this.physicsBodyType = Phaser.Physics.ARCADE;
 
   this.bulletTime=0;
-//var bullets;
-//var trace;
-//var explosions;
   this.land = land;
-
-  for (var i = 0; i < 40; i++)
+  this.z = 40;
+  for (var i = 0; i < 50; i++)
   {
       var b = this.create(0, 0, 'bullet');
       b.name = 'bullet' + i;
-      b.exists = false;
-      b.visible = false;
+      //b.body.drag = {x:70.5, y:70.5};
+      b.exists = false;  b.visible = false;
       b.checkWorldBounds = true;
       b.anchor.set(0.5, 0.5);
       b.lastX=0; b.lastY=0;
@@ -32,15 +27,14 @@ var Bullets = function ( land ) {
       } /*, th*/ );
   }
 
-
   /******* Explosions group ********/
   this.explosions = game.add.group();
+  this.explosions.z = 40;
   this.explosions.createMultiple(10, 'boom');
   this.explosions.forEach(function(exp) {
     exp.anchor.x = 0.5; exp.anchor.y = 0.5;
     exp.animations.add('boom');
   });
-
 
 };
 inheritPrototype(Bullets, Phaser.Group);
@@ -58,6 +52,12 @@ Bullets.prototype.updateBullets = function() {
                    Phaser.Math.angleBetween(0,0, bullet.body.deltaX(), bullet.body.deltaY()));
   }, this);
 
+  var bullets=this;
+  game.physics.arcade.collide(this, this.land.layer, function(bullet, land) {
+    //alert("here! "+bullet.x+", "+bullet.y);
+    bullets.explode(bullet, land);
+    bullet.kill();
+  });
 
 };
 
@@ -74,7 +74,7 @@ function fire() {
     bullet.reset(player.tank.x + (vec.x*50), player.tank.y + (vec.y*50));
     bullet.body.velocity.x = vec.x * gun.power;
     bullet.body.velocity.y = vec.y * gun.power;
-    bullet.whos=1;/* the player fired it */
+    bullet.whos = PLAYER;/* the player fired it */
     //bulletTime = game.time.now + 200;
     var angDrift = game.rnd.between(-1, +2);
     if (angDrift==+2) angDrift=0;
@@ -90,7 +90,6 @@ Bullets.prototype.checkBulletsToLand = function () {
 //function checkBulletsToLand(bullets, bitmap) {
   var over=1;
   var land = this.land;
-  var explosions = this.explosions;
   this.forEachExists(function(bullet) {
     var x = Math.floor(bullet.x);
     var y = Math.floor(bullet.y);
@@ -99,30 +98,31 @@ Bullets.prototype.checkBulletsToLand = function () {
       var o=checkBulletForCameraMove(x,y);
       if (o>over) over=o;
     }
-    if (land.bitmap){
-      //var rgba = bitmap.getPixel(x, y);
-      //console.log( "rgba rga "+rgba.r+" "+rgba.g+" "+rgba.a );
       if (land.checkBitmapForHit(x,y, bullet.whos) > 0) {
-        if (exp=explosions.getFirstExists(false)) {
-          exp.reset(x, y);
-          exp.play('boom', 30, false, true);
-        }
-        /* Erase a Circle in the land to make a crater */
-        land.drawCrater(bullet.lastX, bullet.lastY, 16);
-
-        bullet.kill();
-        game.camera.shake(0.0010, 100); /* shake the screen a bit! */
+        this.explode(bullet, land);
       }
-    }
     bullet.lastX = x;
     bullet.lastY = y;
   }, this);
 
   changeScaleMode(over);
 
-}
+};
+
+Bullets.prototype.explode = function ( bullet, land ) {
+  if (exp=this.explosions.getFirstExists(false)) {
+    exp.reset(Math.floor(bullet.x), Math.floor(bullet.y));
+    exp.play('boom', 30, false, true);
+  }
+  /* Erase a Circle in the land to make a crater */
+  this.land.drawCrater(bullet.lastX, bullet.lastY, 16, /*exclude*/LAND);
+
+  bullet.kill();
+  game.camera.shake(0.0010, 100); /* shake the screen a bit! */
+};
 
 function tankToBulletsHandler(tank, bullet) {
+  /* Weve hit a tank ! */
   bullet.kill();
   game.camera.shake(0.0020, 250); /* shake the screen a bit! */
 }
@@ -133,12 +133,12 @@ function tankToBulletsHandler(tank, bullet) {
 var Trace = function() {
   /****** Trace Lines ****************/
   Phaser.Group.call(this, game); /* create a Group, the parent Class */
+  this.z = 40;
   for ( i = 0; i < 100; i++)
   {
       var t = this.create(0, 0, 'trace');
       t.name = 'trace' + i;
-      t.exists = false;
-      t.visible = false;
+      t.exists = false;  t.visible = false;
       t.anchor.set(0.5, 0.5);
   }
   this.traceOn=false;
@@ -148,7 +148,7 @@ inheritPrototype(Trace, Phaser.Group);
 Trace.prototype.updateTrace = function(player, land) {
   var gun = player.gun;  /* just to shorten some variable names */
 
-  if (land.bitmap && this.traceOn) {
+  if (/*land.bitmap &&*/ this.traceOn) {
     /* this will animate the trace line, by slightly moving the start point every second */
     var startNudge = 4+ ((new Date()).getSeconds() % 2) * 10;
 
@@ -171,10 +171,11 @@ Trace.prototype.updateTrace = function(player, land) {
     for (n=0; n<100; n++) { /* go through each of the trace dots */
       var t = this.next(); /* t is our next trace dot sprite */
       if (collision){
-        t.exists=false; //t.visible=false; /* we're finished, but we still must erase all the remaining dots */
+        t.exists=false; t.visible=false; /* we're finished, but we still must erase all the remaining dots */
 
       }else{
         t.reset(p.x, p.y); /* place the next dot on the line */
+        //t.bringToTop();
         t.angle = Phaser.Math.radToDeg(
                     Phaser.Math.angleBetween(0,0, deltaX, deltaY));
         last.x=p.x; last.y=p.y;
@@ -183,9 +184,9 @@ Trace.prototype.updateTrace = function(player, land) {
           p.x += deltaX;
           p.y += deltaY;
           /* Check for land collision */
-          //var rgba = bitmap.getPixel(Math.floor(p.x), Math.floor(p.y));
-          //if (rgba.a > 0) collision=true;
-          if (land.checkBitmapForHit(Math.floor(p.x), Math.floor(p.y), 1) > 0)
+          if (land.checkBitmapForHit(Math.floor(p.x), Math.floor(p.y), 1))
+              collision=true;
+          if ((p.x > level.x2) || (p.x < level.x) || (p.y > level.y2) || (p.y < level.y))
               collision=true;
         }while(Math.abs(last.distance(p)) < 20);
       }

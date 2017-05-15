@@ -3,10 +3,14 @@
     <head>
         <meta charset="UTF-8" />
         <title>Bals game</title>
-        <!-- use local Phaser Lib -->
-        <!-- <script src="phaser\build\phaser.js"></script>   -->
+        <!-- use local Phaser Lib   -->
+        <script src="phaser2.6.1.min.js"></script>
         <!-- use CDN Phaser Lib -->
-        <script src="//cdn.jsdelivr.net/phaser/2.6.1/phaser.min.js"></script>
+        <!--  <script src="//cdn.jsdelivr.net/phaser/2.6.1/phaser.min.js"></script>
+        <script src="phaser\v2\build\phaser.js"></script>
+        <script src="phaser\v3\dist\phaser.js"></script>
+        -->
+
         <script src="land.js"></script>
         <script src="player.js"></script>
         <script src="bullets.js"></script>
@@ -14,8 +18,10 @@
         <script src="learning.js"></script>
     <script type="text/javascript">
 
+var PLAYER = 1;
+var ENEMY = 2;
 
-var game = new Phaser.Game(900, 600, Phaser.WEBGL, 'Tanks');
+var game = new Phaser.Game(900, 600, Phaser.CANVAS, 'Tanks');
 var BasicGame = function(game) {}; /* Class */
 BasicGame.Boot = function (game) { /* Class */
     // nothing here
@@ -84,7 +90,7 @@ BasicGame.Boot.prototype =
     //game.scale.scaleMode = Phaser.ScaleManager.RESIZE;
 
     game.physics.startSystem(Phaser.Physics.ARCADE);
-    game.physics.arcade.gravity.y = 200;
+    game.physics.arcade.gravity.y = 600;
 
     /******* Parallax Background ********/
     this.background = new Parallax(level.bgPercent, level.bgOffset);
@@ -107,6 +113,8 @@ BasicGame.Boot.prototype =
     /*****  Foreground (Land) **********/
     //createLand(this);
     this.land = new Land(this);
+    this.land.createBitmap(130,300, 800,620, DRAWING); /* players drawing area */
+    this.land.createBitmap(1050,200, 1800,600, ENEMY_DRAWING); /* enemys drawing bitmap area */
 
     /************ Bullets *****************/
     //createBullets(this);
@@ -115,8 +123,6 @@ BasicGame.Boot.prototype =
 
     /******* Player ********************/
     this.player = new Player(430, 616);
-    //createPlayer(this);
-    //setupEnemy(this);
     this.enemy = new Enemy(this.bullets, this.land);
 
     game.world.setBounds(level.x, level.y, level.x2-level.x, level.y2-level.y);
@@ -153,12 +159,13 @@ BasicGame.Boot.prototype =
   /*****************************************************************************/
   update: function()
   {
+    /* Fade in from Black at start of Game */
+    if (count===0) game.camera.flash(0x000000, 600, true);
 
     /************ Player **************************************/
     //updatePlayer(this);
     game.physics.arcade.collide(this.enemy, this.bullets, tankToBulletsHandler, null, this);
     game.physics.arcade.collide(this.player.tank, this.bullets, tankToBulletsHandler, null, this);
-
 
     /************ Gun *****************************************/
     if (this.joystick) { if (this.joystick.method==1) {
@@ -179,6 +186,7 @@ BasicGame.Boot.prototype =
 
 
     /********** Joystick ***************************************/
+
     this.screenFix.update(); /* buttons are fixed to screen to make them stationary, this realigns them after scrolling/zooming */
 
 
@@ -303,7 +311,7 @@ Joystick.prototype.updateJoypadBarrel = function() {
     var vec = angleToVector( this.gun.angle );
     this.barrel.x = vec.x * (this.shrt );
     this.barrel.y = vec.y * (this.shrt );
-    this.barrelBar.length = ((this.gun.power-90)/(850-90) * 130);
+    this.barrelBar.length = ((this.gun.power-300)/(1200-300) * 130);
     this.barrelBar.crop(new Phaser.Rectangle(0,  130-this.barrelBar.length,
                                         15, 130 ));
 }
@@ -338,7 +346,7 @@ function createDrawButton(th) {
     drawButton = game.add.button(0,0, 'pencil', drawPress.bind(th), this,0,0,0);
     drawButton.alpha = 0.6;
     drawButton.anchor.setTo(0.5,0.5);
-    th.screenFix.add(drawButton, 60, -230, 0.12);
+    th.screenFix.add(drawButton, 60, -230, 1.0);
 }
 function drawPress() { /* the drawing pencil button pressed */
   if(drawMode==false)  {drawMode=true; drawButton.alpha=0.9}
@@ -383,8 +391,7 @@ function pointerOnDown(p) {
       drawing.lastPos=w;
       game.input.addMoveCallback(pointerOnMove, this);
       drawing.pointerId = p.id;
-      this.land.drawStartDefence(w.x, w.y, '#B020D0');
-      //bitmap.circle(w.x, w.y, 4.5, '#B020D0');
+      this.land.drawStartDefence(w.x, w.y, '#B020D0', DRAWING);
     }
   }
 }
@@ -421,6 +428,7 @@ function pointerOnMove(p) {
       if (dist > 20)
         this.player.gun.angle += (angle - this.joystick.lastAngle);
       this.player.gun.power += (dist - this.joystick.lastDist) *6;
+
       this.joystick.lastAngle = angle;
       this.joystick.lastDist = dist;
     }
@@ -428,7 +436,7 @@ function pointerOnMove(p) {
     //gun.angle = Phaser.math.clamp(gun.angle, -135, 135);
     if (this.player.gun.angle>135) this.player.gun.angle = 135;
     if (this.player.gun.angle<-135) this.player.gun.angle = -135;
-    this.player.gun.power = Phaser.Math.clamp(this.player.gun.power, 90, 850);
+    this.player.gun.power = Phaser.Math.clamp(this.player.gun.power, 300, 1200);
 
     /* Draw the joypads gun-barrel graphic */
     this.joystick.updateJoypadBarrel();
@@ -440,7 +448,7 @@ function pointerOnMove(p) {
     if (drawing.lastPos!=null){
       if (w.distance( drawing.lastPos ) > 10) {
         this.land.drawDefence(drawing.lastPos.x, drawing.lastPos.y,
-                              w.x, w.y, '#B020D0'); /* purple */
+                              w.x, w.y, '#B020D0', DRAWING); /* purple */
         drawing.lastPos.x = w.x;
         drawing.lastPos.y = w.y;
       }

@@ -1,14 +1,9 @@
-
-//var player;
 //var cursors;    /* keyboard inputs */
 var firebutton; /* space bar */
-
-//var enemy;
 
 
 /************************ PLAYER CLASS ********************************************/
 /**************************************************************************************/
-
 
 var Player = function(x,y) {
 //function createPlayer (th) {
@@ -23,13 +18,12 @@ var Player = function(x,y) {
     this.tank.speed = 400;
     this.add( this.tank );
 
-
     this.tank.enableBody = true;
     this.tank.physicsBodyType = Phaser.Physics.ARCADE;
     game.physics.enable(this.tank, Phaser.Physics.ARCADE);
     this.tank.body.allowGravity = false;
     this.tank.body.drag = {x:10000,y:10000};
-    this.tank.body.setSize(54,40, 10,5);
+    //this.tank.body.setSize(54,40, 10,5);
 
     this.tank.scale.set(0.5);
 
@@ -37,7 +31,7 @@ var Player = function(x,y) {
     this.gun = {
       angle : 60,
       angleVelocity:0,
-      power : 210,
+      power : 350,
       powerVelocity:0
     };
 
@@ -56,7 +50,7 @@ var Enemy = function( bullets, land ) {
   game.physics.enable(this.tank, Phaser.Physics.ARCADE);
   this.tank.body.allowGravity = false;
   this.tank.body.drag = {x:10000,y:10000};
-  this.tank.body.setSize(48,62, 16,5);
+  //this.tank.body.setSize(48,62, 16,5);
   this.add( this.tank );
 
   this.bullets=bullets;
@@ -73,7 +67,7 @@ Enemy.prototype.enemyFire = function(angle, power) {
       bullet.reset(this.tank.x + (vec.x*50), this.tank.y + (vec.y*50));
       bullet.body.velocity.x = vec.x * power;
       bullet.body.velocity.y = vec.y * power;
-      bullet.whos=2;/* Enemy fired it */
+      bullet.whos = ENEMY; /* Enemy fired it */
     }
 };
 
@@ -81,13 +75,13 @@ Enemy.prototype.enemyLogic = function() {
   var what = game.rnd.between(0, 4);
   switch (what) {
     case 1: /* shoot a front shot*/
-      this.enemyFire( game.rnd.between(-40,-60), game.rnd.between(400, 475) );
+      this.enemyFire( game.rnd.between(-40,-60), game.rnd.between(780, 875) );
       break;
     case 2: /* shoot a back shot */
-      this.enemyFire( game.rnd.between(-20, -30), game.rnd.between(520, 540) );
+      this.enemyFire( game.rnd.between(-20, -25), game.rnd.between(950, 1100) );
       break;
     case 3: /* shoot a flurry */
-      var a=game.rnd.between(-20, -30), b=game.rnd.between(520, 550);
+      var a=game.rnd.between(-20, -25), b=game.rnd.between(950, 1100);
       this.enemyFire( a, b );
       setTimeout( function(){this.enemyFire(game.rnd.between(a+1, a+1),
                                             game.rnd.between(b-1,b+1));}.bind(this), 150);
@@ -109,7 +103,7 @@ Enemy.prototype.enemyDrawRandomDefence = function() {
   var y1 = game.rnd.between(350, 540);
   var x2 = x1 - 200;
   var y2 = y1 + 70;
-  this.land.drawDefence(x1,y1, x2,y2, '#827a6a'); /* grey */
+  this.land.drawDefence(x1,y1, x2,y2, '#827a6a', ENEMY_DRAWING); /* grey */
 
 };
 
