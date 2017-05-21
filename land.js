@@ -118,10 +118,12 @@ Land.prototype.checkBitmapForHit = function(x,y, who) {
 
 /* Erase a Circle in the land to make a crater */
 Land.prototype.drawCrater = function( x,y, width, excludeType) {
+  var h=width/2;
   for (n=0; n<this.bitmaps.length; ++n){
     var b=this.bitmaps[n];
     if (b && (b.type != excludeType)) {
-      if (x>b.x1 && x<b.x2 && y>b.y1 && y<b.y2) {
+      if ( x>(b.x1-h) && x<(b.x2+h) &&
+           y>(b.y1-h) && y<(b.y2+h) ) {
         b.bitmap.blendDestinationOut();
         b.bitmap.circle(x-b.x1, y-b.y1, width);
         b.bitmap.blendReset();

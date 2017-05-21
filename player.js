@@ -6,26 +6,26 @@ var firebutton; /* space bar */
 /**************************************************************************************/
 
 var Player = function(x,y) {
-//function createPlayer (th) {
-    /******* Player ********************/
     //Phaser.Sprite.call(this, game, x, y, 'tank2_right'); /* create a Sprite, the parent Class */
-
     Phaser.Group.call(this, game); /* create a Group, the parent Class */
 
-    //this.x=x; this.y=y;
     this.tank = game.add.sprite(x,y,'tank2_right');
     this.tank.anchor.set(0.5, 0.5);
-    this.tank.speed = 400;
+    this.tank.speed = 200;
     this.add( this.tank );
 
     this.tank.enableBody = true;
     this.tank.physicsBodyType = Phaser.Physics.ARCADE;
     game.physics.enable(this.tank, Phaser.Physics.ARCADE);
-    this.tank.body.allowGravity = false;
-    this.tank.body.drag = {x:10000,y:10000};
+    this.tank.body.allowGravity = true;
+    this.tank.body.drag = {x:300,y:300};
+    //this.tank.body.bounce.setTo(0.5, 0.5);
+    this.tank.body.mass=20;
     //this.tank.body.setSize(54,40, 10,5);
 
     this.tank.scale.set(0.5);
+    this.tank.onPlatform=false; /* used by my land-roving code */
+    this.tank.health=100;
 
     /************ Gun *****************/
     this.gun = {
@@ -38,19 +38,42 @@ var Player = function(x,y) {
 };
 inheritPrototype(Player, Phaser.Group);
 
+Player.prototype.updatePlayer = function( land ) {
+
+
+
+};
+
+function collisionTankToLand( tank, land ) {
+  var x=Math.floor(tank.x), y=Math.floor(tank.y);
+  if ( land.getPixel( x, y+22 )==1 ) {
+    if ( land.getPixel( x, y+21 )==1 ) tank.body.y--;
+    if (tank.body.velocity.y > 0)
+      tank.body.velocity.y = 0;
+    tank.body.allowGravity = false;
+    tank.body.drag.x = 3000; /* friction against the ground */
+    tank.onPlatform=true;
+  }else {
+    tank.body.allowGravity = true;
+    tank.body.drag.x = 300;
+    tank.onPlatform=false;
+  }
+}
+
 /******* Enemy Tank ********************/
 var Enemy = function( bullets, land ) {
-//function setupEnemy(th){
   Phaser.Group.call(this, game); /* create a Group, the parent Class */
   t = this.tank = game.add.sprite(1400,607,'tank_left');
   this.tank.anchor.set(0.5, 0.5);
-  this.tank.speed = 400;
+  this.tank.speed = 200;
   this.tank.enableBody = true;
   this.tank.physicsBodyType = Phaser.Physics.ARCADE;
   game.physics.enable(this.tank, Phaser.Physics.ARCADE);
-  this.tank.body.allowGravity = false;
-  this.tank.body.drag = {x:10000,y:10000};
+  this.tank.body.allowGravity = true;
+  this.tank.body.drag = {x:300,y:300};
   //this.tank.body.setSize(48,62, 16,5);
+  this.tank.onPlatform=false;
+  this.tank.health=100;
   this.add( this.tank );
 
   this.bullets=bullets;
@@ -115,6 +138,12 @@ Enemy.prototype.startEnemyLogic = function() {
     this.enemyDrawRandomDefence(); this.enemyDrawRandomDefence();
     this.enemyDrawRandomDefence(); this.enemyDrawRandomDefence();
   }.bind(this), 2000);
+};
+Enemy.prototype.stopEnemyLogic = function() {
+  if (this.enemyLogicTimeout !== null){
+    clearTimeout(this.enemyLogicTimeout);
+    this.enemyLogicTimeout=null;
+  }
 };
 
 if (typeof Object.create !== 'function') {

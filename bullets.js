@@ -29,7 +29,7 @@ var Bullets = function ( land ) {
 
   /******* Explosions group ********/
   this.explosions = game.add.group();
-  this.explosions.z = 40;
+  this.explosions.z = 45;
   this.explosions.createMultiple(10, 'boom');
   this.explosions.forEach(function(exp) {
     exp.anchor.x = 0.5; exp.anchor.y = 0.5;
@@ -100,6 +100,8 @@ Bullets.prototype.checkBulletsToLand = function () {
     }
       if (land.checkBitmapForHit(x,y, bullet.whos) > 0) {
         this.explode(bullet, land);
+        land.drawCrater(bullet.lastX, bullet.lastY, 16, /*exclude*/LAND);
+        game.camera.shake(0.0010, 100); /* shake the screen a bit! */
       }
     bullet.lastX = x;
     bullet.lastY = y;
@@ -115,15 +117,14 @@ Bullets.prototype.explode = function ( bullet, land ) {
     exp.play('boom', 30, false, true);
   }
   /* Erase a Circle in the land to make a crater */
-  this.land.drawCrater(bullet.lastX, bullet.lastY, 16, /*exclude*/LAND);
-
+  //if (land) this.land.drawCrater(bullet.lastX, bullet.lastY, 16, /*exclude*/LAND);
   bullet.kill();
-  game.camera.shake(0.0010, 100); /* shake the screen a bit! */
 };
 
 function tankToBulletsHandler(tank, bullet) {
   /* Weve hit a tank ! */
-  bullet.kill();
+  tank.damage(40);
+  this.bullets.explode(bullet, null);
   game.camera.shake(0.0020, 250); /* shake the screen a bit! */
 }
 
@@ -133,7 +134,7 @@ function tankToBulletsHandler(tank, bullet) {
 var Trace = function() {
   /****** Trace Lines ****************/
   Phaser.Group.call(this, game); /* create a Group, the parent Class */
-  this.z = 40;
+  this.z = 50;
   for ( i = 0; i < 100; i++)
   {
       var t = this.create(0, 0, 'trace');
@@ -171,7 +172,7 @@ Trace.prototype.updateTrace = function(player, land) {
     for (n=0; n<100; n++) { /* go through each of the trace dots */
       var t = this.next(); /* t is our next trace dot sprite */
       if (collision){
-        t.exists=false; t.visible=false; /* we're finished, but we still must erase all the remaining dots */
+        t.exists=false; //t.visible=false; /* we're finished, but we still must erase all the remaining dots */
 
       }else{
         t.reset(p.x, p.y); /* place the next dot on the line */
