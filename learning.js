@@ -1,30 +1,53 @@
 /************************ LEARNING CLASS ********************************************/
 /**************************************************************************************/
-var Learning = function () {
-  this.item = [];
-}
-Learning.prototype.update = function() {
-  for (var n=0; n<this.item.length; n++) {
-    var itm = this.item[n];
-    var x=itm.screenFix.x, y=itm.screenFix.y;
-    if (x < 0) x = game.width + itm.screenFix.x;
-    if (y < 0) y = game.height + itm.screenFix.y;
-    var p = screenToWorld( { x: x, y: y } );
-    itm.x = p.x;  itm.y = p.y;
-    itm.scale.set(screenToWorldScale(itm.screenFix.scale));
-  }
-}
-Learning.prototype.add = function( itm, x,y,scale ) {
-  itm.screenFix = { x: x, y: y, scale: scale };
-  this.item.push( itm );
-  
-}
+var FIND_DRAW_BUTTON=1;
+var DRAW_A_HOUSE =2;
+var OH_NO_SHOOTING =3;
 
-Learning.prototype.remove = function( itm ) {
-  for (var n=0; n<this.item.length; n++) {
-    if (this.item[n] === itm) {
-      this.item.splice(n, 1);
-      return;
+var DRAW_BUTTON_PRESS =4;
+var PENCIL_IMPRESSION =5;
+
+var Learning = function () {
+  this.stage = 0;
+  this.draw_impression_count=0;
+};
+Learning.prototype.update = function(  ) {
+  if (this.stage==0 && count > 300)
+    this.stage = FIND_DRAW_BUTTON;
+  if (this.stage==FIND_DRAW_BUTTON) {
+    /* draw arrow & text */
+    if (!this.arrow) {
+      this.arrow = game.add.sprite(60, 100, 'arrow');
+      game.add.tween(this.arrow).to({ x: 90 }, 600, Phaser.Easing.Quadratic.InOut, true, 0, 1000, true);
+      this.text = game.add.text(150,40, "Press the drawing button to Draw a House", {font:'12px Courier', fill:'#000000'});
+    }
+
+  }
+  if (this.stage==DRAW_A_HOUSE) {
+
+  }
+//console.log(this.stage);
+
+};
+Learning.prototype.trigger = function( trigger ) {
+
+  if (this.stage==FIND_DRAW_BUTTON && trigger==DRAW_BUTTON_PRESS) {
+    this.stage = DRAW_A_HOUSE;
+    /* remove arrow graphic */
+    game.add.tween(this.arrow).to({alpha:0.0}, 200, Phaser.Easing.Linear.None , true, 300, 0, false)
+                    .onComplete.add(function(a){ a.destroy(); },this);
+    /* change text */
+    this.text.destroy();
+  }
+  if (this.stage==DRAW_A_HOUSE && trigger==PENCIL_IMPRESSION) {
+    this.draw_impression_count++;
+    if (this.draw_impression_count >= 20) {
+      this.stage = OH_NO_SHOOTING;
     }
   }
-}
+
+};
+
+Learning.prototype.remove = function(  ) {
+
+};

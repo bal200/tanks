@@ -22,10 +22,10 @@ var PLAYER = 1;
 var ENEMY = 2;
 
 var game = new Phaser.Game(900, 600, Phaser.CANVAS, 'Tanks');
-var BasicGame = function(game) {}; /* Class */
-BasicGame.Boot = function (game) { /* Class */
-    // nothing here
-};
+//var BasicGame = function(game) {}; /* Class */
+//BasicGame.Boot = function (game) { /* Class */
+//    // nothing here
+//};
 
 /********  Game Variable Declarations  *****************************************/
 /*******************************************************************************/
@@ -52,9 +52,10 @@ var level = {  /* Settings for this particular level in the game */
   }               /** background neatly covers the whole world. */
 }
 
-BasicGame.Boot.prototype =
-{
+/************************** States definitions ************************************/
+var loadState = {  /* 'load' state */
   preload: function() {
+    var loadingText = game.add.text(80,150, "loading...", {font:'30px Courier', fill:'#ffffff'});
     game.time.advancedTiming = true;
     game.load.image("titlepage", "assets/titlepage.png");
     game.load.image("fullscreen", "assets/fullscreen.png");
@@ -72,23 +73,34 @@ BasicGame.Boot.prototype =
     game.load.image("barrelBar", "assets/barrelbar.png");
 
     game.load.image("pencil", "assets/pencil.png");
+    game.load.image("arrow", "assets/arrow.png");
     game.load.spritesheet("boom", "assets/boom32wh12.png",32,32,12);
 
     game.load.tilemap('tilemap', 'assets/tilemap.json', null, Phaser.Tilemap.TILED_JSON);
     game.load.image('jungletileset', 'assets/jungletileset_32x32.png');
-
+    /* Audio */
+    game.load.audio('audio1', 'assets/audio/Wood hits.wav');
+    game.load.audio('audio2', 'assets/audio/Explosion.wav');
   },
+  create: function() {
+    game.state.start('play');
+  }
+};
 
+var playState = {
   /**********  Create Function  ************************************************/
   /*****************************************************************************/
 	create: function()
 	{
     myGame=this;
+    count=0;
     game.scale.fullScreenScaleMode = Phaser.ScaleManager.RESIZE;
     //game.scale.scaleMode = Phaser.ScaleManager.RESIZE;
 
     game.physics.startSystem(Phaser.Physics.ARCADE);
     game.physics.arcade.gravity.y = 600;
+
+    //this.zoomed = game.add.group();
 
     /******* Parallax Background ********/
     this.background = new Parallax(level.bgPercent, level.bgOffset);
@@ -140,6 +152,8 @@ BasicGame.Boot.prototype =
     game.input.onDown.add(pointerOnDown, this);
     game.input.onUp.add(pointerOnUp, this);
 
+    this.learning = new Learning( this );
+
     if (gameMode==TITLE_SCREEN) {
       titlePage = game.add.button(game.width/2,game.height/2, 'titlepage', titlePageStartPress, this,0,0,0);
       titlePage.anchor.set(0.5,0.5);
@@ -154,7 +168,14 @@ BasicGame.Boot.prototype =
     /****** My Camera *****************/
     createMyCam(this);
 
-
+    audio1 = game.add.audio('audio1');
+    audio1.allowMultiple = true;
+	  audio1.addMarker('gunshot', 0.1, 0.20);
+    audio1.addMarker('boom', 1.95, 0.20);
+    audio2 = game.add.audio('audio2');
+    //audio2.allowMultiple = true;
+	  //audio2.addMarker('boom', 2.0, 0.40);
+    //audio1.play();
   },
 
   /**********  Update Function  ************************************************/
@@ -186,6 +207,7 @@ BasicGame.Boot.prototype =
 
     this.screenFix.update(); /* buttons are fixed to screen to make them stationary, this realigns them after scrolling/zooming */
 
+    this.learning.update();
 
     p = screenToWorld( { x:(game.width/2), y:(game.height/2) } );
     titlePage.x = p.x; titlePage.y = p.y;
@@ -215,7 +237,6 @@ BasicGame.Boot.prototype =
     }
 
     /************ Player **************************************/
-    //updatePlayer(this);
     game.physics.arcade.collide(this.enemy, this.bullets, tankToBulletsHandler, null, this);
     game.physics.arcade.collide(this.player.tank, this.bullets, tankToBulletsHandler, null, this);
     this.player.updatePlayer( this.land );
@@ -243,10 +264,10 @@ BasicGame.Boot.prototype =
 
     createFireButton(this);
     createDrawButton(this);
-    if (this.enemy)
-      this.enemy.startEnemyLogic();
+    if (this.enemy) this.enemy.startEnemyLogic();
   },
   gameFinish: function() {
+    /* Show the Finish screen */
     gameMode=WIN;
     /* stop stuff */
     this.enemy.stopEnemyLogic();
@@ -257,9 +278,25 @@ BasicGame.Boot.prototype =
     this.screenFix.add(this.finishPage, game.width/2, game.height/2, 1.0);
   },
   gameClose: function() {
-    game.camera.fade(0x000000, 600);  /* fade to black */
-    /* destroy myGame object */
-    /* respawn a new myGame object */
+    game.camera.fade(0x000000, 300);  /* fade to black */
+    game.time.events.add(300, function() {
+      gameMode=GAME; /* dont want the title screen, just straight into game play */
+      /* destroys and respawns a new Game object */
+      game.state.restart();
+    }, this);
+
+  },
+  shutdown: function() {
+    /* delete all the things! */
+    this.firebutton=null;
+    this.joystick=null;
+    this.screenfix=null;
+    this.enemy=null;
+    this.player=null;
+    this.trace=null;
+    this.bullets=null;
+    this.land=null;
+    this.background=null;
   }
 };
 
@@ -326,7 +363,7 @@ var Joystick = function ( player ) {
 
     this.barrel = game.add.group();
     this.barrel.angle = this.gun.angle;
-//alert("th.player.gun.angle; " + th.player.gun.angle);
+
     this.barrelImg = game.add.sprite(0,0,'barrel');
     this.barrelImg.anchor.set(0.5, 1.0);
     this.barrel.add(this.barrelImg);
@@ -353,8 +390,7 @@ Joystick.prototype.updateJoypadBarrel = function() {
                                         15, 130 ));
 }
 
-
-/***************************** Functions **********************************************/
+/***************************** Button Functions **********************************************/
 
 /*************** Fire Button ********************/
 function createFireButton(th) {
@@ -376,11 +412,11 @@ function drawPress() { /* the drawing pencil button pressed */
   if(drawMode==false)  {drawMode=true; drawButton.alpha=0.9}
   else  {drawMode=false; drawButton.alpha=0.6}
   this.trace.turnTraceOff();
+  this.learning.trigger( DRAW_BUTTON_PRESS );
 }
 function drawOff(){
   if (drawMode==true) {drawMode=false; drawButton.alpha=0.6;}
 }
-
 
 function fullScreenModePress() {
   game.scale.startFullScreen();
@@ -475,6 +511,7 @@ function pointerOnMove(p) {
                               w.x, w.y, '#B020D0', DRAWING); /* purple */
         drawing.lastPos.x = w.x;
         drawing.lastPos.y = w.y;
+        this.learning.trigger( PENCIL_IMPRESSION );
       }
     }
 
@@ -514,9 +551,11 @@ function inheritPrototype(childObject, parentObject) {
 }
 
 
+/**************** Add the States and start ************************************/
+game.state.add('load', loadState);
+game.state.add('play', playState);
 
-game.state.add('Boot', BasicGame.Boot);
-game.state.start('Boot');
+game.state.start('load');
 
 
 

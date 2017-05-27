@@ -93,7 +93,7 @@ Land.prototype.getPixelExclude = function(x,y, excludeType) {
 Land.prototype.updateLand = function() {
   count++;
   /* now the tilemap has been rendered, copy it to a bitmap instead, so our destructable landscape works */
-  if (count == 5) {
+  if (count == 2) {
     this.tilemapToBitmap(this.tilemap, this.layer);
     //if (this.th.joystick) game.world.bringToTop(this.th.joystick);
     //game.world.bringToTop(this.th.button);

@@ -75,6 +75,7 @@ function fire() {
     bullet.body.velocity.x = vec.x * gun.power;
     bullet.body.velocity.y = vec.y * gun.power;
     bullet.whos = PLAYER;/* the player fired it */
+    audio1.play('gunshot'); /* gunshot noise */
     //bulletTime = game.time.now + 200;
     var angDrift = game.rnd.between(-1, +2);
     if (angDrift==+2) angDrift=0;
@@ -115,6 +116,7 @@ Bullets.prototype.explode = function ( bullet, land ) {
   if (exp=this.explosions.getFirstExists(false)) {
     exp.reset(Math.floor(bullet.x), Math.floor(bullet.y));
     exp.play('boom', 30, false, true);
+    audio1.play('boom'); /* boom noise */
   }
   /* Erase a Circle in the land to make a crater */
   //if (land) this.land.drawCrater(bullet.lastX, bullet.lastY, 16, /*exclude*/LAND);

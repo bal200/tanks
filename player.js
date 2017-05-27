@@ -91,6 +91,7 @@ Enemy.prototype.enemyFire = function(angle, power) {
       bullet.body.velocity.x = vec.x * power;
       bullet.body.velocity.y = vec.y * power;
       bullet.whos = ENEMY; /* Enemy fired it */
+      audio1.play('gunshot', 0.6);
     }
 };
 
