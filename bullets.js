@@ -3,11 +3,12 @@
 
 /***** Bullets **********/
 
-var Bullets = function ( land ) {
+var Bullets = function ( land, group ) {
   Phaser.Group.call(this, game); /* create a Group, the parent Class */
 
   this.enableBody = true;
   this.physicsBodyType = Phaser.Physics.ARCADE;
+  group.add( this );
 
   this.bulletTime=0;
   this.land = land;

@@ -5,7 +5,7 @@ var firebutton; /* space bar */
 /************************ PLAYER CLASS ********************************************/
 /**************************************************************************************/
 
-var Player = function(x,y) {
+var Player = function(x,y, grp) {
     //Phaser.Sprite.call(this, game, x, y, 'tank2_right'); /* create a Sprite, the parent Class */
     Phaser.Group.call(this, game); /* create a Group, the parent Class */
 
@@ -22,8 +22,10 @@ var Player = function(x,y) {
     //this.tank.body.bounce.setTo(0.5, 0.5);
     this.tank.body.mass=20;
     //this.tank.body.setSize(54,40, 10,5);
-
     this.tank.scale.set(0.5);
+
+    grp.add(this); /* add the tank to the zoomable group */
+
     this.tank.onPlatform=false; /* used by my land-roving code */
     this.tank.health=100;
 

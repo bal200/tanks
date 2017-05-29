@@ -50,7 +50,8 @@ function updateMyCam(th) {
     worldScale = Phaser.Math.clamp(worldScale, 0.35, 2.0);
 
     // set our world scale
-    game.world.scale.set(worldScale);
+    //game.world.scale.set(worldScale);
+    th.zoomable.scale.set(worldScale);
 
     /***** Work out Screen size and Screen Middle point ****/
     /* Note: screen width including scaling is (game.width/worldScale)  */
@@ -93,15 +94,15 @@ function updateMyCam(th) {
 
     /* work out camera offset, based on Scale, and camera coords are for top left of camera */
     /* Camera middle - half screen width, allowing for scaling of screen too */
-    game.world.pivot.x = cameraMidPos.x - (screenSizeScaled.x /2);
-    game.world.pivot.y = cameraMidPos.y - (screenSizeScaled.y /2);
+    th.zoomable.pivot.x = cameraMidPos.x - (screenSizeScaled.x /2);
+    th.zoomable.pivot.y = cameraMidPos.y - (screenSizeScaled.y /2);
     /* Limit camera to world bounds */
-    game.world.pivot.x = Phaser.Math.clamp(game.world.pivot.x, level.x, level.x2 - screenSizeScaled.x);
-    game.world.pivot.y = Phaser.Math.clamp(game.world.pivot.y, level.y, level.y2 - screenSizeScaled.y);
+    th.zoomable.pivot.x = Phaser.Math.clamp(th.zoomable.pivot.x, level.x, level.x2 - screenSizeScaled.x);
+    th.zoomable.pivot.y = Phaser.Math.clamp(th.zoomable.pivot.y, level.y, level.y2 - screenSizeScaled.y);
 //    game.world.pivot.y = Phaser.Math.clamp(game.world.pivot.y, level.y, 960 - screenSizeScaled.y);
 
     /* ease gentle up if the screen is showing too low.  No one wants the screen filled with ground! */
-    var screenBottom = game.world.pivot.y + screenSizeScaled.y;
+    var screenBottom = th.zoomable.pivot.y + screenSizeScaled.y;
 //    var dif=screenBottom - screenBottomTarget;
 //    if (dif > 0) {
 //      cameraMidPos.y -= (dif * (lerp*2.0));
@@ -111,7 +112,7 @@ function updateMyCam(th) {
 
 
     /******** Parallax Background **********************************/
-    th.background.myUpdate(game.world.pivot, screenSizeScaled, worldScale);
+    th.background.myUpdate(th.zoomable.pivot, screenSizeScaled, worldScale);
 
 }
 
@@ -121,7 +122,7 @@ var Parallax = function(bgPercent, bgOffset) {
   Phaser.Group.call(this, game); /* create a Group, the parent Class */
   this.bgPercent=bgPercent; /* percentage of the main worldScale */
   this.bgOffset=bgOffset;  /* Point */
-}
+};
 inheritPrototype(Parallax, Phaser.Group);
 
 Parallax.prototype.myUpdate=function(pivot, screenScale, worldScale) {
@@ -129,12 +130,13 @@ Parallax.prototype.myUpdate=function(pivot, screenScale, worldScale) {
     //var bgPercent = level.bgPercent;
     //var bgOffset = level.bgOffset;
     /* Work out Camera Middle again, but this time it will include any Clamping */
+//pivot = {x:0,y:0};
     var camMid = new Phaser.Point(pivot.x + (screenScale.x /2),
                                      pivot.y + (screenScale.y /2));
 
     /** A percentage of the main screen Scale will be the Backgrounds scale.
      ** small values = slow moving, distant looking background */
-    var bgScale = (1/worldScale) * reduceAScale(worldScale+1.0, this.bgPercent);
+    var bgScale = (1/worldScale) *  reduceAScale(worldScale+1.0, this.bgPercent);
     /* the (1/worldscale) effectively cancels out the worldscale already in the translation */
     this.scale.set(  bgScale  );
 
@@ -147,7 +149,7 @@ Parallax.prototype.myUpdate=function(pivot, screenScale, worldScale) {
 
                         (camMid.y) /* same for Y */
                           -(( (camMid.y*this.bgPercent)+this.bgOffset.y ) * bgScale) );
-}
+};
 
 
 function changeScaleMode(n) {
@@ -198,14 +200,14 @@ function reduceAScale(scale, ratio) {
  ** Takes into account the camera position and scaling too */
 function screenToWorld(s) {
   w = new Phaser.Point();
-  w.x = ((s.x / worldScale) + game.world.pivot.x);
-  w.y = ((s.y / worldScale) + game.world.pivot.y);
+  w.x = ((s.x / worldScale) + myGame.zoomable.pivot.x);
+  w.y = ((s.y / worldScale) + myGame.zoomable.pivot.y);
   return w;
 }
 function worldToScreen(w) {
   s = new Phaser.Point();
-  s.x = ((w.x - game.world.pivot.x) * worldScale);
-  s.y = ((w.y - game.world.pivot.y) * worldScale);
+  s.x = ((w.x - myGame.zoomable.pivot.x) * worldScale);
+  s.y = ((w.y - myGame.zoomable.pivot.y) * worldScale);
   return s;
 }
 function screenToWorldScale(s) {

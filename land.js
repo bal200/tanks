@@ -17,11 +17,13 @@ var Land = function( th ) {
   this.tilemap = game.add.tilemap('tilemap');
   this.tilemap.addTilesetImage('jungletileset_32x32', 'jungletileset');
 
-  this.layer = this.tilemap.createLayer('Tile Layer 1', this.tilemap.widthInPixels, this.tilemap.heightInPixels);
+  this.layer = this.tilemap.createLayer('Tile Layer 1',
+                    this.tilemap.widthInPixels, this.tilemap.heightInPixels, th.zoomable);
   this.layer.fixedToCamera = false;
   this.layer.autoCull = false;
   // this.layer.debug = true;
   this.tilemap.setCollisionBetween(1,884); /* set all the tiles as things to bump into */
+  //th.zoomable.add(this.layer);
 
   this.th = th;
   this.bitmaps = []; /* list of destructable squares over the map */
@@ -49,7 +51,7 @@ Land.prototype.tilemapToBitmap = function(tilemap, layer) {
   layer.destroy();
 
   this.bitmaps.push(bitmap);
-
+  this.th.zoomable.add(bitmap.image); /* add to group */
   //if (this.th.joystick) game.world.bringToTop(this.th.joystick);
   //game.world.bringToTop(this.th.button);
   //game.world.bringToTop(drawButton);
@@ -59,6 +61,7 @@ Land.prototype.tilemapToBitmap = function(tilemap, layer) {
 Land.prototype.createBitmap = function(x1,y1, x2,y2, type) {
   var bitmap = new Bitmap(x1,y1, x2,y2, type);
   this.bitmaps.push(bitmap);
+  this.th.zoomable.add(bitmap.image); /* add to group */
 };
 
 /* check for a pixel hit on all the bitmaps.  returns 1 if a land/drawing pixel exists at x,y */

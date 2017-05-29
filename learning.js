@@ -17,8 +17,10 @@ Learning.prototype.update = function(  ) {
   if (this.stage==FIND_DRAW_BUTTON) {
     /* draw arrow & text */
     if (!this.arrow) {
-      this.arrow = game.add.sprite(60, 100, 'arrow');
-      game.add.tween(this.arrow).to({ x: 90 }, 600, Phaser.Easing.Quadratic.InOut, true, 0, 1000, true);
+      this.arrow = game.add.sprite(140, game.height-230, 'arrow');
+      this.arrow.anchor.set(0.5,0.5);
+      game.add.tween(this.arrow).from({alpha:0.0}, 200, Phaser.Easing.Linear.None , true, 300, 0, false); /* fade in */
+      game.add.tween(this.arrow).to({ x: 170 }, 600, Phaser.Easing.Quadratic.InOut, true, 0, 1000, true); /* wave back & forth */
       this.text = game.add.text(150,40, "Press the drawing button to Draw a House", {font:'12px Courier', fill:'#000000'});
     }
 
@@ -34,8 +36,8 @@ Learning.prototype.trigger = function( trigger ) {
   if (this.stage==FIND_DRAW_BUTTON && trigger==DRAW_BUTTON_PRESS) {
     this.stage = DRAW_A_HOUSE;
     /* remove arrow graphic */
-    game.add.tween(this.arrow).to({alpha:0.0}, 200, Phaser.Easing.Linear.None , true, 300, 0, false)
-                    .onComplete.add(function(a){ a.destroy(); },this);
+    game.add.tween(this.arrow).to({alpha:0.0}, 200, Phaser.Easing.Linear.None , true, 300, 0, false) /* fade out */
+                    .onComplete.add(function(a){ a.destroy(); },this); /* then destroy the arrow */
     /* change text */
     this.text.destroy();
   }
