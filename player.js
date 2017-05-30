@@ -63,7 +63,7 @@ function collisionTankToLand( tank, land ) {
 }
 
 /******* Enemy Tank ********************/
-var Enemy = function( bullets, land ) {
+var Enemy = function( bullets, land, group ) {
   Phaser.Group.call(this, game); /* create a Group, the parent Class */
   t = this.tank = game.add.sprite(1400,607,'tank_left');
   this.tank.anchor.set(0.5, 0.5);
@@ -77,6 +77,7 @@ var Enemy = function( bullets, land ) {
   this.tank.onPlatform=false;
   this.tank.health=100;
   this.add( this.tank );
+  group.add( this );
 
   this.bullets=bullets;
   this.land=land;

@@ -32,6 +32,7 @@ var Bullets = function ( land, group ) {
   this.explosions = game.add.group();
   this.explosions.z = 45;
   this.explosions.createMultiple(10, 'boom');
+  group.add( this.explosions );
   this.explosions.forEach(function(exp) {
     exp.anchor.x = 0.5; exp.anchor.y = 0.5;
     exp.animations.add('boom');

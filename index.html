@@ -43,6 +43,7 @@ var titlePage;
 var count = 0;
 
 var level = {  /* Settings for this particular level in the game */
+  level:1,
   x:0,  y:-1536,  /* world size */
   x2:2048, y2:1024,
   bgPercent : 0.15,  /** This percentage of the main screen Scale will be used as the Backgrounds scale.
@@ -138,7 +139,7 @@ var playState = {
     this.player = new Player(430, 616, this.zoomable);
     this.player.tank.events.onKilled.add(this.gameFinish, this);
 
-    this.enemy = new Enemy(this.bullets, this.land);
+    this.enemy = new Enemy(this.bullets, this.land, this.zoomable);
 
     game.world.setBounds(level.x, level.y, level.x2-level.x, level.y2-level.y);
 
@@ -265,12 +266,15 @@ var playState = {
   startGame: function() {
     /* After the title screen, called when user presses Play button */
     gameMode = GAME; /* Start Game */
-    this.joystick=new Joystick(this.player); //createJoystick();
-    this.screenFix.add( this.joystick, this.joystick.center.x, -this.joystick.center.y, 1.0 );
-
-    createFireButton(this);
+    this.learning.trigger( START_GAME );
     createDrawButton(this);
-    if (this.enemy) this.enemy.startEnemyLogic();
+    if (false) {
+      this.joystick=new Joystick(this.player); //createJoystick();
+      this.screenFix.add( this.joystick, this.joystick.center.x, -this.joystick.center.y, 1.0 );
+      createFireButton(this);
+      if (this.enemy) this.enemy.startEnemyLogic();
+    }
+
   },
   gameFinish: function() {
     /* Show the Finish screen */
@@ -303,6 +307,10 @@ var playState = {
     this.bullets=null;
     this.land=null;
     this.background=null;
+  },
+  createJoystick: function() {
+    this.joystick=new Joystick(this.player); //createJoystick();
+    this.screenFix.add( this.joystick, this.joystick.center.x, -this.joystick.center.y, 1.0 );
   }
 };
 
@@ -383,8 +391,9 @@ var Joystick = function ( player ) {
 
     this.add( this.barrel );
     this.updateJoypadBarrel();
+    fadeIn(this);
 //alert("th.gun.angle; " + th.gun.angle);
-}
+};
 inheritPrototype(Joystick, Phaser.Group);
 
 /* set the joystick to reflect the current gun position */
@@ -405,9 +414,9 @@ Joystick.prototype.updateJoypadBarrel = function() {
 function createFireButton(th) {
     /* button */
     th.button = game.add.button(0,0, 'firebutton', fire, th,0,0,0);
-    th.button.alpha = 1.0;
     th.button.anchor.set(0.5,0.5);
     th.screenFix.add(th.button, -60, -60, 1.0);
+    fadeIn(th.button);
 }
 
 /************ Drawing Pencil Button **************/
