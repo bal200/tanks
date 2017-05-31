@@ -68,7 +68,7 @@ function fire() {
   var gun = this.player.gun;  /* just to shorten some variable names */
 
   drawOff(); /* turn off drawing mode now were shootin' */
-  if (this.joystick.pointerId==null)  this.trace.turnTraceOff(); /* get rid of the trace lines now too */
+  if (this.joystick && this.joystick.pointerId==null)  this.trace.turnTraceOff(); /* get rid of the trace lines now too */
   var bullet = this.bullets.getFirstExists(false);
   if (bullet) {
     var vec = angleToVector( gun.angle );
@@ -85,6 +85,7 @@ function fire() {
     gun.power += game.rnd.between(-1, +1);
     this.joystick.updateJoypadBarrel();
   }
+  this.learning.trigger( FIRE_BUTTON_PRESS );
 }
 
 /* check through the group of bullets to see if any have hit our foreground land,
