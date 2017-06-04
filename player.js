@@ -31,10 +31,10 @@ var Player = function(x,y, grp) {
 
     /************ Gun *****************/
     this.gun = {
-      angle : 60,
-      angleVelocity:0,
-      power : 350,
-      powerVelocity:0
+      angle : 44,
+    //  angleVelocity:0,
+      power : 685
+    //  powerVelocity:0
     };
 
 };
@@ -102,13 +102,13 @@ Enemy.prototype.enemyLogic = function() {
   var what = game.rnd.between(0, 4);
   switch (what) {
     case 1: /* shoot a front shot*/
-      this.enemyFire( game.rnd.between(-40,-60), game.rnd.between(780, 875) );
+      this.enemyFire( game.rnd.between(-40,-60), game.rnd.between(680, 875) );
       break;
     case 2: /* shoot a back shot */
-      this.enemyFire( game.rnd.between(-20, -25), game.rnd.between(950, 1100) );
+      this.enemyFire( game.rnd.between(-20, -25), game.rnd.between(850, 1100) );
       break;
     case 3: /* shoot a flurry */
-      var a=game.rnd.between(-20, -25), b=game.rnd.between(950, 1100);
+      var a=game.rnd.between(-20, -25), b=game.rnd.between(850, 1100);
       this.enemyFire( a, b );
       setTimeout( function(){this.enemyFire(game.rnd.between(a+1, a+1),
                                             game.rnd.between(b-1,b+1));}.bind(this), 150);

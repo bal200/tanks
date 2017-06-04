@@ -177,6 +177,7 @@ function checkBulletForCameraMove(x,y) {
 }
 
 function setWorldScale( i ) {
+  if (gameMode==WIN || gameMode==LOOSE) return; /* dont let the scale jump around when on title screens */
   if (i != null)  scaleMode = i;
   var a=game.width / 900 ;
 

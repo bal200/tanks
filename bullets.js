@@ -136,10 +136,11 @@ function tankToBulletsHandler(tank, bullet) {
 
 /*********************** Trace Lines ******************************************/
 /******************************************************************************/
-var Trace = function() {
+var Trace = function( group ) {
   /****** Trace Lines ****************/
   Phaser.Group.call(this, game); /* create a Group, the parent Class */
   this.z = 50;
+  group.add( this );
   for ( i = 0; i < 100; i++)
   {
       var t = this.create(0, 0, 'trace');
@@ -154,7 +155,7 @@ inheritPrototype(Trace, Phaser.Group);
 Trace.prototype.updateTrace = function(player, land) {
   var gun = player.gun;  /* just to shorten some variable names */
 
-  if (/*land.bitmap &&*/ this.traceOn) {
+  if ( this.traceOn) {
     /* this will animate the trace line, by slightly moving the start point every second */
     var startNudge = 4+ ((new Date()).getSeconds() % 2) * 10;
 
@@ -169,11 +170,11 @@ Trace.prototype.updateTrace = function(player, land) {
     var collision=false;
     var changeWorldScale=1;
     /* Lets redraw all the trace marks in place */
-    do {
+//    do {
       deltaY += (game.physics.arcade.gravity.y / 100)/100;
       p.x += deltaX;
       p.y += deltaY;
-    }while(Math.abs(last.distance(p)) < startNudge);
+//    }while(Math.abs(last.distance(p)) < startNudge);
     for (n=0; n<100; n++) { /* go through each of the trace dots */
       var t = this.next(); /* t is our next trace dot sprite */
       if (collision){
