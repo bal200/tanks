@@ -1,0 +1,529 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Bals game</title>
+        <!-- use local Phaser Lib   -->
+        <script src="phaser2.6.1.min.js"></script>
+        <!-- use CDN Phaser Lib -->
+        <!--  <script src="//cdn.jsdelivr.net/phaser/2.6.1/phaser.min.js"></script>
+        <script src="phaser\v2\build\phaser.js"></script>
+        <script src="phaser\v3\dist\phaser.js"></script>
+        -->
+
+        <script src="land.js"></script>
+        <script src="player.js"></script>
+        <script src="bullets.js"></script>
+        <script src="mycam.js"></script>
+        <script src="learning.js"></script>
+    <script type="text/javascript">
+
+var PLAYER = 1;
+var ENEMY = 2;
+
+var game = new Phaser.Game(900, 600, Phaser.CANVAS, 'Tanks');
+var BasicGame = function(game) {}; /* Class */
+BasicGame.Boot = function (game) { /* Class */
+    // nothing here
+};
+
+/********  Game Variable Declarations  *****************************************/
+/*******************************************************************************/
+var myGame=null;
+var fullScreenButton;
+var drawButton;
+var drawMode = false;
+var drawing = {
+  lastPos:null,
+  pointerId:null
+}
+var TITLE_SCREEN=1, GAME=2, WIN=3, LOOSE=4;
+var gameMode = TITLE_SCREEN; /* 1=Title Screen,  2=Game,  3=Win, 4=Loose */
+var titlePage;
+var count = 0;
+
+var level = {  /* Settings for this particular level in the game */
+  x:0,  y:-1536,  /* world size */
+  x2:2048, y2:1024,
+  bgPercent : 0.15,  /** This percentage of the main screen Scale will be used as the Backgrounds scale.
+                      ** Small values = a slow moving distant background */
+  bgOffset:{      /** Because the background maths is calculated from the screen middle, you may need to */
+    x:400, y:470  /** pull the background to the left and to the top. Tweak this to make sure the      */
+  }               /** background neatly covers the whole world. */
+}
+
+BasicGame.Boot.prototype =
+{
+  preload: function() {
+    game.time.advancedTiming = true;
+    game.load.image("titlepage", "assets/titlepage.png");
+    game.load.image("fullscreen", "assets/fullscreen.png");
+    game.load.image("background", "assets/background 1139x892.png");
+    game.load.image("cloud", "assets/cloud.png");
+    game.load.image("tank_right", "assets/tank_right.png");
+    game.load.image("tank_left", "assets/tank_left.png");
+    game.load.image("tank2_right", "assets/tank2_fromVector2.png");
+    game.load.image("bullet", "assets/bullet.png");
+    game.load.image("trace", "assets/trace.png");
+
+    game.load.image("firebutton", "assets/firebutton.png");
+    game.load.image("joypad", "assets/touchpad.png");
+    game.load.image("barrel", "assets/barrel.png");
+    game.load.image("barrelBar", "assets/barrelbar.png");
+
+    game.load.image("pencil", "assets/pencil.png");
+    game.load.spritesheet("boom", "assets/boom32wh12.png",32,32,12);
+
+    game.load.tilemap('tilemap', 'assets/tilemap.json', null, Phaser.Tilemap.TILED_JSON);
+    game.load.image('jungletileset', 'assets/jungletileset_32x32.png');
+
+  },
+
+  /**********  Create Function  ************************************************/
+  /*****************************************************************************/
+	create: function()
+	{
+    myGame=this;
+    game.scale.fullScreenScaleMode = Phaser.ScaleManager.RESIZE;
+    //game.scale.scaleMode = Phaser.ScaleManager.RESIZE;
+
+    game.physics.startSystem(Phaser.Physics.ARCADE);
+    game.physics.arcade.gravity.y = 600;
+
+    /******* Parallax Background ********/
+    this.background = new Parallax(level.bgPercent, level.bgOffset);
+    this.background.theImage = game.add.sprite(0, 0, 'background');
+    this.background.add( this.background.theImage );
+
+    /******* Make some Clouds! **********/
+    var cld=game.add.sprite(60, 300, 'cloud'); cld.alpha=0.4; cld.scale.set(0.6);
+    game.add.tween(cld).to({x:1100}, 140000, null, true, 0, 0, false).onComplete.add(cloudLoop, this);
+    this.background.add( cld );
+
+    cld=game.add.sprite(400, 200, 'cloud'); cld.alpha=0.5; cld.scale.set(0.8);
+    game.add.tween(cld).to({x:1100}, 100000, null, true, 0, 0, false).onComplete.add(cloudLoop, this);
+    this.background.add( cld );
+
+    cld=game.add.sprite(700, 310, 'cloud'); cld.alpha=0.6; cld.scale.set(0.7);
+    game.add.tween(cld).to({x:1100}, 65000, null, true, 0, 0, false).onComplete.add(cloudLoop, this);
+    this.background.add( cld );
+
+    /*****  Foreground (Land) **********/
+    this.land = new Land(this);
+    this.land.createBitmap(130,300, 800,640, DRAWING); /* players drawing area */
+    this.land.createBitmap(1050,200, 1800,640, ENEMY_DRAWING); /* enemys drawing bitmap area */
+
+    /************ Bullets *****************/
+    //createBullets(this);
+    this.bullets = new Bullets( this.land /*this*/);
+    this.trace = new Trace();
+
+    /******* Player ********************/
+    this.player = new Player(430, 616);
+    this.player.tank.events.onKilled.add(this.gameFinish, this);
+
+    this.enemy = new Enemy(this.bullets, this.land);
+
+    game.world.setBounds(level.x, level.y, level.x2-level.x, level.y2-level.y);
+
+    /****** Joystick ******************/
+    this.screenFix = new ScreenFix(); /* adding buttons to screenFix will keep their position reletive to the screen */
+    this.joystick = null; /* not yet */
+
+
+    /******* Keys *****************/
+    this.cursors = this.input.keyboard.createCursorKeys();
+    fireButton = this.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+    fireButton.onDown.add(fire, this);
+
+    /****** Touch screen event handlers *****/
+    game.input.onDown.add(pointerOnDown, this);
+    game.input.onUp.add(pointerOnUp, this);
+
+    if (gameMode==TITLE_SCREEN) {
+      titlePage = game.add.button(game.width/2,game.height/2, 'titlepage', titlePageStartPress, this,0,0,0);
+      titlePage.anchor.set(0.5,0.5);
+      this.screenFix.add(titlePage, game.width/2, game.height/2, 1.0);
+    }else if (gameMode==GAME)
+      this.startGame();
+
+    fullScreenButton = game.add.button(0,0, 'fullscreen', fullScreenModePress, this,0,0,0);
+    this.screenFix.add(fullScreenButton, 10, 10, 1.0);
+
+
+    /****** My Camera *****************/
+    createMyCam(this);
+
+
+  },
+
+  /**********  Update Function  ************************************************/
+  /*****************************************************************************/
+  update: function()
+  {
+    /* Fade in from Black at start of Game */
+    if (count===0) game.camera.flash(0x000000, 600, true);
+
+    /************ Gun *****************************************/
+    if (this.joystick) { if (this.joystick.method==1) {
+      this.player.gun.angle += this.player.gun.angleVelocity;
+      this.player.gun.power += this.player.gun.powerVelocity;
+    }}
+    /********** Foreground ************************************/
+    //updateLand(this);
+    this.land.updateLand();
+
+    /********** Bullets ***************************************/
+    this.bullets.updateBullets();
+
+    this.trace.updateTrace(this.player, this.land);
+
+    /********** My Camera **************************************/
+    updateMyCam(this);
+
+
+    /********** Joystick ***************************************/
+
+    this.screenFix.update(); /* buttons are fixed to screen to make them stationary, this realigns them after scrolling/zooming */
+
+
+    p = screenToWorld( { x:(game.width/2), y:(game.height/2) } );
+    titlePage.x = p.x; titlePage.y = p.y;
+    titlePage.scale.set(screenToWorldScale(1.0));
+    titlePage.bringToTop();
+
+    /************ Keyboard ********************************/
+    //player.body.velocity.x=0;
+    //player.body.velocity.y=0;
+    //enemy.body.velocity.x=0;
+    //enemy.body.velocity.y=0;
+    var tank=this.player.tank;
+    if (this.cursors.left.isDown) {
+        tank.body.velocity.x = -tank.speed; }
+    else if (this.cursors.right.isDown) {
+        tank.body.velocity.x = tank.speed; }
+    if (this.cursors.up.isDown) {
+      if (tank.onPlatform==true) tank.body.velocity.y = -(tank.speed*1.5);
+    }
+    else if (this.cursors.down.isDown) {
+        tank.body.velocity.y = tank.speed; }
+    // zoom
+    if (game.input.keyboard.isDown(Phaser.Keyboard.Q)) {
+        worldScale += 0.01; }
+    else if (game.input.keyboard.isDown(Phaser.Keyboard.A)) {
+        worldScale -= 0.01;
+    }
+
+    /************ Player **************************************/
+    //updatePlayer(this);
+    game.physics.arcade.collide(this.enemy, this.bullets, tankToBulletsHandler, null, this);
+    game.physics.arcade.collide(this.player.tank, this.bullets, tankToBulletsHandler, null, this);
+    this.player.updatePlayer( this.land );
+
+    collisionTankToLand( this.player.tank, this.land);
+    collisionTankToLand( this.enemy.tank, this.land);
+
+  },
+  render: function()
+  {
+      game.debug.text(game.time.fps+"fps "
+                      +"cam "+game.camera.x+","+game.camera.y+" "
+                      +"myCam "+game.world.pivot.x.toFixed(0)+","+game.world.pivot.y.toFixed(0)+" "
+                      +"scale "+worldScale.toFixed(2)+" "
+                      +"player "+this.player.tank.x.toFixed(0)+","+this.player.tank.y.toFixed(0)
+                      +" gun "+this.player.gun.angle.toFixed(1)+"a "+this.player.gun.power.toFixed(1)+"p"
+                      +" scrn "+game.scale.width.toFixed(1)+","+game.scale.height.toFixed(1)+""
+                      || '--', 2, 14, "#00ff00");
+  },
+  startGame: function() {
+    /* After the title screen, called when user presses Play button */
+    gameMode = GAME; /* Start Game */
+    this.joystick=new Joystick(this.player); //createJoystick();
+    this.screenFix.add( this.joystick, this.joystick.center.x, -this.joystick.center.y, 1.0 );
+
+    createFireButton(this);
+    createDrawButton(this);
+    if (this.enemy)
+      this.enemy.startEnemyLogic();
+  },
+  gameFinish: function() {
+    gameMode=WIN;
+    /* stop stuff */
+    this.enemy.stopEnemyLogic();
+    this.trace.traceOn=false;
+    /* show a finish screen */
+    this.finishPage = game.add.button(game.width/2,game.height/2, 'titlepage', this.gameClose, this,0,0,0);
+    this.finishPage.anchor.set(0.5,0.5);
+    this.screenFix.add(this.finishPage, game.width/2, game.height/2, 1.0);
+  },
+  gameClose: function() {
+    game.camera.fade(0x000000, 600);  /* fade to black */
+    /* destroy myGame object */
+    /* respawn a new myGame object */
+  }
+};
+
+function titlePageStartPress() {
+  /* Fade out the title page */
+  game.add.tween(titlePage).to({alpha:0}, 400, null, true, 0, 0, false) /* fade out title screen */
+                           .onComplete.add(function(sprite, tween){
+                              this.screenFix.remove(sprite);
+                              sprite.destroy();
+                              this.startGame();
+                           }, this);
+
+  /* Cause the camera to tween down from the sky to the tank */
+  camTarget.setTo(this.player.tank.x, this.player.tank.y);
+  //this.startGame();
+
+}
+
+/************************ SCREEN FIX CLASS ********************************************/
+/**************************************************************************************/
+var ScreenFix = function () {
+  this.item = [];
+}
+ScreenFix.prototype.update = function() {
+  for (var n=0; n<this.item.length; n++) {
+    var itm = this.item[n];
+    var x=itm.screenFix.x, y=itm.screenFix.y;
+    if (x < 0) x = game.width + itm.screenFix.x;
+    if (y < 0) y = game.height + itm.screenFix.y;
+    var p = screenToWorld( { x: x, y: y } );
+    itm.x = p.x;  itm.y = p.y;
+    itm.scale.set(screenToWorldScale(itm.screenFix.scale));
+  }
+}
+ScreenFix.prototype.add = function( itm, x,y,scale ) {
+  itm.screenFix = { x: x, y: y, scale: scale };
+  this.item.push( itm );
+
+}
+ScreenFix.prototype.remove = function( itm ) {
+  for (var n=0; n<this.item.length; n++) {
+    if (this.item[n] === itm) {
+      this.item.splice(n, 1);
+      return;
+    }
+  }
+}
+
+/**************************************************************************************/
+/************************** JOYSTICK CLASS ********************************************/
+/**************************************************************************************/
+var Joystick = function ( player ) {
+    Phaser.Group.call(this, game); /* create a Group, the parent Class */
+    //joystick = game.add.group();
+    this.gun = player.gun; /* keep a ref to the gun we're controlling */
+    this.method=3;
+    this.long = 170; this.shrt = 40;
+    this.center = {x:10,y:10}; /* the centre here means the segments centre, which is below left of the sprite */
+
+    this.joystickBack = game.add.sprite(0,0, 'joypad');
+    this.joystickBack.alpha = 0.4;
+    this.joystickBack.anchor.set(0, 1.0);
+    this.add( this.joystickBack );
+
+    this.barrel = game.add.group();
+    this.barrel.angle = this.gun.angle;
+//alert("th.player.gun.angle; " + th.player.gun.angle);
+    this.barrelImg = game.add.sprite(0,0,'barrel');
+    this.barrelImg.anchor.set(0.5, 1.0);
+    this.barrel.add(this.barrelImg);
+
+    this.barrelBar = game.add.sprite(0,0,'barrelBar');
+    this.barrelBar.anchor.set(0.5, 1.0);
+    this.barrel.add(this.barrelBar);
+
+    this.add( this.barrel );
+    this.updateJoypadBarrel();
+//alert("th.gun.angle; " + th.gun.angle);
+}
+inheritPrototype(Joystick, Phaser.Group);
+
+/* set the joystick to reflect the current gun position */
+Joystick.prototype.updateJoypadBarrel = function() {
+    /* Draw the joypads gun-barrel graphic */
+    this.barrel.angle = this.gun.angle;
+    var vec = angleToVector( this.gun.angle );
+    this.barrel.x = vec.x * (this.shrt );
+    this.barrel.y = vec.y * (this.shrt );
+    this.barrelBar.length = ((this.gun.power-300)/(1200-300) * 130);
+    this.barrelBar.crop(new Phaser.Rectangle(0,  130-this.barrelBar.length,
+                                        15, 130 ));
+}
+
+
+/***************************** Functions **********************************************/
+
+/*************** Fire Button ********************/
+function createFireButton(th) {
+    /* button */
+    th.button = game.add.button(0,0, 'firebutton', fire, th,0,0,0);
+    th.button.alpha = 1.0;
+    th.button.anchor.set(0.5,0.5);
+    th.screenFix.add(th.button, -60, -60, 1.0);
+}
+
+/************ Drawing Pencil Button **************/
+function createDrawButton(th) {
+    drawButton = game.add.button(0,0, 'pencil', drawPress.bind(th), this,0,0,0);
+    drawButton.alpha = 0.6;
+    drawButton.anchor.setTo(0.5,0.5);
+    th.screenFix.add(drawButton, 60, -230, 1.0);
+}
+function drawPress() { /* the drawing pencil button pressed */
+  if(drawMode==false)  {drawMode=true; drawButton.alpha=0.9}
+  else  {drawMode=false; drawButton.alpha=0.6}
+  this.trace.turnTraceOff();
+}
+function drawOff(){
+  if (drawMode==true) {drawMode=false; drawButton.alpha=0.6;}
+}
+
+
+function fullScreenModePress() {
+  game.scale.startFullScreen();
+}
+
+/******************** POINTER MOVEMENT HANDLERS ***************************************/
+/**************************************************************************************/
+function pointerOnDown(p) {
+
+  var w=screenToWorld(p);
+  var s=new Phaser.Point(p.x, p.y);
+
+  if (this.joystick) {
+    var centre=new Phaser.Point(this.joystick.center.x, game.height-this.joystick.center.y);
+    var dist = Math.abs(s.distance(centre));
+    var angle = Phaser.Math.radToDeg(Phaser.Math.angleBetweenPoints(centre, s));
+  }
+  //console.log("angle = "+angle);
+  if (this.joystick && dist > this.joystick.shrt && dist < this.joystick.long && /* in the joysticks circle */
+        angle > -90 && angle < 0) {
+    /* theyve in our joystick */
+    game.input.addMoveCallback(pointerOnMove, this);
+    this.joystick.pointerId = p.id;
+    this.joystick.start = s; /* store the starting press position, (in screen coords) */
+    this.joystick.centre = centre;
+    this.joystick.last = new Phaser.Point(s.x, s.y); /* the position it was last time */
+    this.joystick.lastAngle = angle; /* the angle of this press */
+    this.joystick.lastDist = centre.distance( s ); /* distance from the circles centre */
+    this.trace.turnTraceOn(); /* show the trace lines now were aiming the gun */
+  }else {
+    if (drawMode==true){ /* the drawing a base on the screen mode is on */
+      drawing.lastPos=w;
+      game.input.addMoveCallback(pointerOnMove, this);
+      drawing.pointerId = p.id;
+      this.land.drawStartDefence(w.x, w.y, '#B020D0', DRAWING);
+    }
+  }
+}
+function pointerOnMove(p) {
+  var w=screenToWorld(p);
+  var s=new Phaser.Point(p.x, p.y);
+  //console.log("Move "+p.x+","+p.y+" myWorld "+w.x.toFixed(0)+","+w.y.toFixed(0));
+  if (this.joystick && p.id == this.joystick.pointerId) {
+    var start=this.joystick.start;
+    var centre=this.joystick.centre;
+    var last = this.joystick.last;
+
+    if (this.joystick.method==1) {
+      var dist = start.distance(s);
+      var deltaX = s.x - start.x;
+      var deltaY = s.y - start.y;
+      deltaX = (deltaX / 60) * this.player.tank.speed;
+      deltaY = (deltaY / 60) * this.player.tank.speed;
+      //this.player.body.velocity.x = deltaX;
+      //this.player.body.velocity.y = deltaY;
+      this.player.gun.angleVelocity += deltaX/4000;
+      this.player.gun.powerVelocity += -deltaY/1000;
+    }
+    if (this.joystick.method==2) {
+      var lastDeltaX = s.x - last.x;
+      var lastDeltaY = s.y - last.y;
+      this.player.gun.angle += lastDeltaX * 0.50;
+      this.player.gun.power -= lastDeltaY * 2;
+    }
+    if (this.joystick.method==3) {
+      var angle = Phaser.Math.radToDeg(Phaser.Math.angleBetweenPoints(centre, s));
+      var dist = centre.distance( s );
+
+      if (dist > 20)
+        this.player.gun.angle += (angle - this.joystick.lastAngle);
+      this.player.gun.power += (dist - this.joystick.lastDist) *6;
+
+      this.joystick.lastAngle = angle;
+      this.joystick.lastDist = dist;
+    }
+    //Phaser.Math.wrapAngle();
+    //gun.angle = Phaser.math.clamp(gun.angle, -135, 135);
+    if (this.player.gun.angle>135) this.player.gun.angle = 135;
+    if (this.player.gun.angle<-135) this.player.gun.angle = -135;
+    this.player.gun.power = Phaser.Math.clamp(this.player.gun.power, 300, 1200);
+
+    /* Draw the joypads gun-barrel graphic */
+    this.joystick.updateJoypadBarrel();
+
+    this.joystick.last = s;
+  }
+
+  if (p.id == drawing.pointerId) {
+    if (drawing.lastPos!=null){
+      if (w.distance( drawing.lastPos ) > 10) {
+        this.land.drawDefence(drawing.lastPos.x, drawing.lastPos.y,
+                              w.x, w.y, '#B020D0', DRAWING); /* purple */
+        drawing.lastPos.x = w.x;
+        drawing.lastPos.y = w.y;
+      }
+    }
+
+  }
+
+}
+
+function pointerOnUp(p) {
+  var w=screenToWorld(p);
+  //console.log("up "+p.x+","+p.y+" myWorld "+w.x.toFixed(0)+","+w.y.toFixed(0));
+  if (this.joystick){ if (p.id == this.joystick.pointerId) {
+    game.input.deleteMoveCallback(pointerOnMove, this);
+    this.joystick.pointerId = null;
+    //this.player.body.velocity.x = 0;
+    //this.player.body.velocity.y = 0;
+    //this.gun.angleVelocity =0;
+    //this.gun.powerVelocity =0;
+  }}
+  if (p.id == drawing.pointerId) {
+    drawing.pointerId = null;
+    game.input.deleteMoveCallback(pointerOnMove, this);
+  }
+}
+
+if (typeof Object.create !== 'function') {
+    Object.create = function (o) {
+        function F() {
+        }
+        F.prototype = o;
+        return new F();
+    };
+}
+function inheritPrototype(childObject, parentObject) {
+    var copyOfParent = Object.create(parentObject.prototype);
+    copyOfParent.constructor = childObject;
+    childObject.prototype = copyOfParent;
+}
+
+
+
+game.state.add('Boot', BasicGame.Boot);
+game.state.start('Boot');
+
+
+
+
+
+    </script>
+        </head>
+    <body>
+    </body>
+</html>
