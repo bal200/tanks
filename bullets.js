@@ -139,9 +139,9 @@ function tankToBulletsHandler(tank, bullet) {
 var Trace = function( group ) {
   /****** Trace Lines ****************/
   Phaser.Group.call(this, game); /* create a Group, the parent Class */
-  this.z = 50;
+  //this.z = 50;
   group.add( this );
-  for ( i = 0; i < 100; i++)
+  for ( i = 0; i < 70; i++)
   {
       var t = this.create(0, 0, 'trace');
       t.name = 'trace' + i;
@@ -157,7 +157,7 @@ Trace.prototype.updateTrace = function(player, land) {
 
   if ( this.traceOn) {
     /* this will animate the trace line, by slightly moving the start point every second */
-    var startNudge = 4+ ((new Date()).getSeconds() % 2) * 10;
+    var startNudge = 4+ ((new Date()).getSeconds() % 2) * 15;
 
           var vec = new Phaser.Point(0,-1);
           vec = vec.rotate(0,0, player.gun.angle, true);
@@ -169,17 +169,17 @@ Trace.prototype.updateTrace = function(player, land) {
     var deltaY = (vec.y * gun.power) / 100;
     var collision=false;
     var changeWorldScale=1;
+    this.forEach(function(t) { t.kill(); });
     /* Lets redraw all the trace marks in place */
-//    do {
+    do {
       deltaY += (game.physics.arcade.gravity.y / 100)/100;
       p.x += deltaX;
       p.y += deltaY;
-//    }while(Math.abs(last.distance(p)) < startNudge);
-    for (n=0; n<100; n++) { /* go through each of the trace dots */
+    }while(Math.abs(last.distance(p)) < startNudge);
+    for (n=0; n<70; n++) { /* go through each of the trace dots */
       var t = this.next(); /* t is our next trace dot sprite */
       if (collision){
-        t.exists=false; //t.visible=false; /* we're finished, but we still must erase all the remaining dots */
-
+        //t.exists=false; t.visible=false; /* we're finished, but we still must erase all the remaining dots */
       }else{
         t.reset(p.x, p.y); /* place the next dot on the line */
         //t.bringToTop();
@@ -195,10 +195,9 @@ Trace.prototype.updateTrace = function(player, land) {
               collision=true;
           if ((p.x > level.x2) || (p.x < level.x) || (p.y > level.y2) || (p.y < level.y))
               collision=true;
-        }while(Math.abs(last.distance(p)) < 20);
+        }while(Math.abs(last.distance(p)) < 30);
       }
     }
-
     /* jump to different zoom points, depending on where the trace marks are pointing */
     var newScale=1;
     if (p.x > 800) newScale=2;
@@ -209,16 +208,11 @@ Trace.prototype.updateTrace = function(player, land) {
 
 
 Trace.prototype.turnTraceOn = function() {
-//function turnTraceOn() {
   this.traceOn=true;
 };
 Trace.prototype.turnTraceOff = function() {
-//function turnTraceOff() {
   if (this.traceOn==false) return;
-  for (n=0; n<100; n++) {
-    var t = this.next();
-    t.exists=false;
-  }
+  this.forEach(function(t) { t.kill(); });
   this.traceOn=false;
 };
 

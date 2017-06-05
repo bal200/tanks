@@ -38,6 +38,11 @@ Learning.prototype.update = function(  ) {
 Learning.prototype.trigger = function( trigger ) {
   /* wait a tad at the start before showing instructions */
   if (trigger==START_GAME && level.level==1) {
+//    this.stage=FIND_JOYSTICK;
+//    this.myGame.createJoystick();
+//    this.showGraphic( this.stage );
+//  }
+//  if(0){
     if (this.stage!=0) return; /* the levels restarting, leave our learning vars as they are */
     this.timerCB = game.time.events.add(Phaser.Timer.SECOND * 2, function(){
       this.timerCB=null;
@@ -111,22 +116,51 @@ Learning.prototype.showGraphic = function( stage ) {
   if (this.queue) { stage=this.queue; this.queue=null; }
   if (stage==FIND_DRAW_BUTTON) {
     if (!this.arrow) {
-     this.arrow = game.add.sprite(140, game.height-230, 'arrow'); this.arrow.anchor.set(0.5,0.5);
+     this.arrow = game.add.sprite(140, game.height-230, 'arrow2'); this.arrow.anchor.set(0.5,0.5);
      fadeIn( this.arrow );
      game.add.tween(this.arrow).to({ x: 170 }, 600, Phaser.Easing.Quadratic.InOut, true, 0, 1000, true); /* wave back & forth */
     }
-    text = "Tap the pencil button to draw";
   }
+  if (stage==FIND_JOYSTICK) {
+    if (!this.arrow) { /* Left arrow */
+      this.arrow = game.add.sprite(-60, -110, 'arrow2'); this.arrow.scale.set(0.6);
+      this.arrow.anchor.set(0.5, 0.5); this.arrow.angle= -30;
+      this.myGame.joystick.barrel.add(this.arrow);
+      fadeIn( this.arrow );
+      game.add.tween(this.arrow).to({ x: -40 }, 600, Phaser.Easing.Quadratic.InOut, true, 0, 1000, true); /* wave back & forth */
+    } if (!this.arrow2) {  /* right arrow */
+      this.arrow2 = game.add.sprite(60, -110, 'arrow'); this.arrow2.scale.set(0.6);
+      this.arrow2.anchor.set(0.5, 0.5); this.arrow2.angle= 180+30;
+      this.myGame.joystick.barrel.add(this.arrow2);
+      fadeIn( this.arrow2 );
+      game.add.tween(this.arrow2).to({ x: 40 }, 600, Phaser.Easing.Quadratic.InOut, true, 0, 1000, true); /* wave back & forth */
+    }
+  } if (stage==FIND_JOYSTICK_POWER) {
+    //  if (!this.arrow) { /* Up arrow */
+        this.arrow = game.add.sprite(20, -110, 'arrow'); this.arrow.scale.set(0.6);
+        this.arrow.anchor.set(0.5, 0.5); this.arrow.angle= 90+5;
+        this.myGame.joystick.barrel.add(this.arrow);
+        fadeIn( this.arrow );
+        game.add.tween(this.arrow).to({ y: -90 }, 600, Phaser.Easing.Quadratic.InOut, true, 0, 1000, true); /* wave back & forth */
+    //  } if (!this.arrow2) {  /* Down arrow */
+        this.arrow2 = game.add.sprite(20, -20, 'arrow2'); this.arrow2.scale.set(0.6);
+        this.arrow2.anchor.set(0.5, 0.5); this.arrow2.angle= -90-5;
+        this.myGame.joystick.barrel.add(this.arrow2);
+        fadeIn( this.arrow2 );
+        game.add.tween(this.arrow2).to({ y: -40 }, 600, Phaser.Easing.Quadratic.InOut, true, 0, 1000, true); /* wave back & forth */
+    //  }
+    }
+  if (stage==FIND_DRAW_BUTTON) text = "Tap the pencil button to draw";
   if (stage==DRAW_A_HOUSE) text = '"Draw a house on your tank"';
   if (stage==OH_NO_SHOOTING) text = "Oh no! We're being shot at";
   if (stage==SHOOT_BACK) text = "Tap the Fire button to shoot your tanks cannon";
   if (stage==FIND_JOYSTICK) text = "Use this lever to angle your cannon";
-  if (stage==FIND_JOYSTICK_POWER) text = "Shoot further by sliding the cannons power";
+  if (stage==FIND_JOYSTICK_POWER) text = "Shoot further by sliding the cannons power bar";
 
-  this.text = game.add.text(200,200, text, {font:'bold 22px Courier', fill:'#FFF', boundsAlignH:'center' });
+  this.text = game.add.text(200,200, text,
+      {font:'bold 22px Courier', fill:'#FFF', boundsAlignH:'center', boundsAlignV:'middle' });
   this.text.setShadow(1, 1, 'rgba(0,0,0,1.0)', 2);
-  //var p=screenToWorld({x:game.width, y:0});
-  this.text.setTextBounds(0,200, game.width/*p.x*/,100);
+  this.text.setTextBounds(0,0, game.width,(game.height*0.66));
   this.myGame.screenFix.add(this.text, 0, 0, 1.0);
   this.currentGraphic=stage;
 
@@ -142,8 +176,10 @@ Learning.prototype.removeGraphic = function( stage ) {
     }
   }, this);
 };
-
-
+Learning.prototype.finishOff = function() {
+  this.queue=null;
+  this.removeGraphic();
+}
 
 function fadeIn ( sprite ) {
   game.add.tween(sprite).from({alpha:0.0}, 300, Phaser.Easing.Linear.None , true, 00, 0, false); /* fade in */

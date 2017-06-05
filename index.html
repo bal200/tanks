@@ -4,7 +4,7 @@
         <meta charset="UTF-8" />
         <title>Bals game</title>
         <!-- use local Phaser Lib   -->
-        <!-- <script src="phaser2.6.1.min.js"></script> -->
+        <!-- <script src="phaser2.6.1.min.js"></script>  -->
         <!-- use CDN Phaser Lib -->
         <script src="//cdn.jsdelivr.net/phaser/2.6.1/phaser.min.js"></script>
     <!--  <script src="phaser\v2\build\phaser.js"></script>
@@ -80,6 +80,7 @@ var loadState = {  /* 'load' state */
 
     game.load.image("pencil", "assets/pencil.png");
     game.load.image("arrow", "assets/arrow.png");
+    game.load.image("arrow2", "assets/arrow2.png");
     game.load.spritesheet("boom", "assets/boom32wh12.png",32,32,12);
 
     game.load.tilemap('tilemap', 'assets/tilemap.json', null, Phaser.Tilemap.TILED_JSON);
