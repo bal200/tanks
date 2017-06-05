@@ -115,7 +115,7 @@ Learning.prototype.showGraphic = function( stage ) {
      fadeIn( this.arrow );
      game.add.tween(this.arrow).to({ x: 170 }, 600, Phaser.Easing.Quadratic.InOut, true, 0, 1000, true); /* wave back & forth */
     }
-    text = "Tap the pencil to draw";
+    text = "Tap the pencil button to draw";
   }
   if (stage==DRAW_A_HOUSE) text = '"Draw a house on your tank"';
   if (stage==OH_NO_SHOOTING) text = "Oh no! We're being shot at";
