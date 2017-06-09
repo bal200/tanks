@@ -3,14 +3,14 @@
     <head>
         <meta charset="UTF-8" />
         <title>Bals game</title>
-        <script src="cordova.js"></script>
         <!-- use local Phaser Lib   -->
-        <script src="js/phaser2.6.1.min.js"></script>
+        <!-- <script src="js/phaser2.6.1.min.js"></script>  -->
         <!-- use CDN Phaser Lib -->
-        <!-- <script src="//cdn.jsdelivr.net/phaser/2.6.1/phaser.min.js"></script> -->
+        <script src="//cdn.jsdelivr.net/phaser/2.6.1/phaser.min.js"></script>
     <!--  <script src="phaser\v2\build\phaser.js"></script>
         <script src="phaser\v3\dist\phaser.js"></script>
         -->
+
         <script src="js/land.js"></script>
         <script src="js/player.js"></script>
         <script src="js/bullets.js"></script>
@@ -22,6 +22,10 @@ var PLAYER = 1;
 var ENEMY = 2;
 
 var game = new Phaser.Game(900, 600, Phaser.CANVAS, 'Tanks');
+//var BasicGame = function(game) {}; /* Class */
+//BasicGame.Boot = function (game) { /* Class */
+//    // nothing here
+//};
 
 /********  Game Variable Declarations  *****************************************/
 /*******************************************************************************/
@@ -98,7 +102,7 @@ var playState = {
     myGame=this;
     count=0;
     game.scale.fullScreenScaleMode = Phaser.ScaleManager.RESIZE;
-    game.scale.scaleMode = Phaser.ScaleManager.RESIZE;
+    //game.scale.scaleMode = Phaser.ScaleManager.RESIZE;
 
     game.physics.startSystem(Phaser.Physics.ARCADE);
     game.physics.arcade.gravity.y = 600;
@@ -259,12 +263,12 @@ var playState = {
   render: function()
   {
       game.debug.text(game.time.fps+"fps "
-                      +"scrn "+game.scale.width.toFixed(1)+","+game.scale.height.toFixed(1)+""
                       +"cam "+game.camera.x+","+game.camera.y+" "
                       +"myCam "+this.zoomable.pivot.x.toFixed(0)+","+this.zoomable.pivot.y.toFixed(0)+" "
                       +"scale "+worldScale.toFixed(2)+" "
                       +"player "+this.player.tank.x.toFixed(0)+","+this.player.tank.y.toFixed(0)
                       +" gun "+this.player.gun.angle.toFixed(1)+"a "+this.player.gun.power.toFixed(1)+"p"
+                      +" scrn "+game.scale.width.toFixed(1)+","+game.scale.height.toFixed(1)+""
                       || '--', 2, 14, "#00ff00");
   },
   startGame: function() {
@@ -441,10 +445,7 @@ function drawOff(){
 }
 
 function fullScreenModePress() {
-  if (game.scale.isFullScreen)
-    game.scale.stopFullScreen();
-  else
-    game.scale.startFullScreen(false);
+  game.scale.startFullScreen();
 }
 
 /******************** POINTER MOVEMENT HANDLERS ***************************************/
@@ -583,13 +584,14 @@ function inheritPrototype(childObject, parentObject) {
 game.state.add('load', loadState);
 game.state.add('play', playState);
 
-game.device.whenReady(function() {
-  game.state.start('load');
-});
+game.state.start('load');
+
+
+
 
 
     </script>
         </head>
-    <body style="margin:0px;">
+    <body>
     </body>
 </html>

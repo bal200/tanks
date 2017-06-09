@@ -97,7 +97,9 @@ var playState = {
 	{
     myGame=this;
     count=0;
+    /* if the full screen button is pressed, use this scale mode: */
     game.scale.fullScreenScaleMode = Phaser.ScaleManager.RESIZE;
+    /* use the whole window up: (turn off for desktop browser) */
     game.scale.scaleMode = Phaser.ScaleManager.RESIZE;
 
     game.physics.startSystem(Phaser.Physics.ARCADE);
