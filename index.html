@@ -26,7 +26,6 @@ var game = new Phaser.Game(900, 600, Phaser.CANVAS, 'Tanks');
 /********  Game Variable Declarations  *****************************************/
 /*******************************************************************************/
 var myGame=null;
-var fullScreenButton;
 var drawButton;
 var drawMode = false;
 var drawing = {
@@ -170,8 +169,8 @@ var playState = {
     }else if (gameMode==GAME)
       this.startGame();
 
-    fullScreenButton = game.add.button(0,0, 'fullscreen', fullScreenModePress, this,0,0,0);
-    this.screenFix.add(fullScreenButton, 10, 10, 1.0);
+    this.fullScreenButton = game.add.button(0,0, 'fullscreen', fullScreenButtonPress, this,0,0,0);
+    this.screenFix.add(this.fullScreenButton, 10, 10, 1.0);
 
 
     /****** My Camera *****************/
@@ -195,10 +194,7 @@ var playState = {
     if (count===0) game.camera.flash(0x000000, 600, true);
 
     /************ Gun *****************************************/
-    if (this.joystick) { if (this.joystick.method==1) {
-      this.player.gun.angle += this.player.gun.angleVelocity;
-      this.player.gun.power += this.player.gun.powerVelocity;
-    }}
+
     /********** Foreground ************************************/
     //updateLand(this);
     this.land.updateLand();
@@ -312,7 +308,7 @@ var playState = {
     this.background=null;
   },
   createJoystick: function() {
-    this.joystick=new Joystick(this.player); //createJoystick();
+    this.joystick=new Joystick(this.player);
     this.screenFix.add( this.joystick, this.joystick.center.x, -this.joystick.center.y, 1.0 );
   }
 };
@@ -371,9 +367,8 @@ ScreenFix.prototype.remove = function( itm ) {
 /**************************************************************************************/
 var Joystick = function ( player ) {
     Phaser.Group.call(this, game); /* create a Group, the parent Class */
-    //joystick = game.add.group();
     this.gun = player.gun; /* keep a ref to the gun we're controlling */
-    this.method=3;
+    this.player = player;
     this.long = 170; this.shrt = 40; /* used by the gun barels power slider drawing */
     this.center = {x:10,y:10}; /* the centre here means the segments centre, which is below left of the sprite */
 
@@ -384,6 +379,7 @@ var Joystick = function ( player ) {
 
     this.barrel = game.add.group();
     this.barrel.angle = this.gun.angle;
+    this.barrel.power = this.gun.power; /* 0-100, controls the barrelBar length */
 
     this.barrelImg = game.add.sprite(0,0,'barrel');
     this.barrelImg.anchor.set(0.5, 1.0);
@@ -400,7 +396,7 @@ var Joystick = function ( player ) {
 };
 inheritPrototype(Joystick, Phaser.Group);
 
-/* set the joystick to reflect the current gun position */
+/* set the joystick graphic to reflect the current gun position */
 Joystick.prototype.updateJoypadBarrel = function() {
     /* Draw the joypads gun-barrel graphic */
     this.barrel.angle = this.gun.angle;
@@ -410,7 +406,60 @@ Joystick.prototype.updateJoypadBarrel = function() {
     this.barrelBar.length = ((this.gun.power-300)/(1200-300) * 130);
     this.barrelBar.crop(new Phaser.Rectangle(0,  130-this.barrelBar.length,
                                         15, 130 ));
+    console.log("barelBar.length "+this.barrelBar.length);
 }
+
+Joystick.prototype.onPointerDown = function(p  ) {
+  /* p is pointer position on screen, w is pointer in world coords */
+  var s=new Phaser.Point(p.x, p.y);
+  var centre=new Phaser.Point(this.center.x, game.height - this.center.y);
+  var dist = Math.abs(s.distance(centre));
+  var angle = Phaser.Math.radToDeg(Phaser.Math.angleBetweenPoints(centre, s));
+  //console.log("angle = "+angle);
+  if (dist > this.shrt && dist < this.long && /* is it in the joysticks semi-circle? */
+      angle > -90 && angle < 0) {
+    /* theyre in our joystick */
+    this.pointerId = p.id;
+    this.start = s; /* store the starting press position, (in screen coords) */
+    this.centre = centre;
+    this.last = new Phaser.Point(s.x, s.y); /* the position it was last time */
+    this.lastAngle = angle; /* the angle of this press */
+    this.lastDist = centre.distance( s ); /* distance from the circles centre */
+
+    myGame.trace.turnTraceOn(); /* show the trace lines now were aiming the gun */
+  }
+};
+
+Joystick.prototype.onPointerMove = function ( p ) {
+  if (p.id == this.pointerId) {
+    var s=new Phaser.Point(p.x, p.y);
+    var start=this.start;
+    var centre=this.centre;
+    var last = this.last;
+
+    var angle = Phaser.Math.radToDeg(Phaser.Math.angleBetweenPoints(centre, s));
+    var dist = centre.distance( s );
+
+    if (dist > 20)
+      this.gun.angle += (angle - this.lastAngle);
+    this.gun.power += (dist - this.lastDist) *6;
+
+    if ( Math.abs(angle - this.lastAngle) > 2)  myGame.learning.trigger( JOYSTICK_MOVE );
+    if ( Math.abs(dist - this.lastDist) > 2)  myGame.learning.trigger( JOYSTICK_POWER_CHANGE );
+
+    //Phaser.Math.wrapAngle();
+    //gun.angle = Phaser.math.clamp(gun.angle, -135, 135);
+    if (this.gun.angle>135) this.gun.angle = 135;
+    if (this.gun.angle<-135) this.gun.angle = -135;
+    this.gun.power = Phaser.Math.clamp(this.gun.power, 300, 1200);
+
+    /* Draw the joypads gun-barrel graphic */
+    this.updateJoypadBarrel();
+    this.last = s;
+    this.lastAngle = angle;
+    this.lastDist = dist;
+  }
+};
 
 /***************************** Button Functions **********************************************/
 
@@ -440,7 +489,7 @@ function drawOff(){
   if (drawMode==true) {drawMode=false; drawButton.alpha=0.6;}
 }
 
-function fullScreenModePress() {
+function fullScreenButtonPress() {
   if (game.scale.isFullScreen)
     game.scale.stopFullScreen();
   else
@@ -451,92 +500,27 @@ function fullScreenModePress() {
 /**************************************************************************************/
 function pointerOnDown(p) {
 
-  var w=screenToWorld(p);
-  var s=new Phaser.Point(p.x, p.y);
+  if (this.joystick) this.joystick.onPointerDown( p );
 
-  if (this.joystick) {
-    var centre=new Phaser.Point(this.joystick.center.x, game.height-this.joystick.center.y);
-    var dist = Math.abs(s.distance(centre));
-    var angle = Phaser.Math.radToDeg(Phaser.Math.angleBetweenPoints(centre, s));
+  if (drawMode==true){ /* the drawing a base on the screen mode is on */
+    var w=screenToWorld(p);
+    drawing.lastPos=w;
+    drawing.pointerId = p.id;
+    this.land.drawStartDefence(w.x, w.y, '#B020D0', DRAWING);
   }
-  //console.log("angle = "+angle);
-  if (this.joystick && dist > this.joystick.shrt && dist < this.joystick.long && /* in the joysticks circle */
-        angle > -90 && angle < 0) {
-    /* theyve in our joystick */
-    game.input.addMoveCallback(pointerOnMove, this);
-    this.joystick.pointerId = p.id;
-    this.joystick.start = s; /* store the starting press position, (in screen coords) */
-    this.joystick.centre = centre;
-    this.joystick.last = new Phaser.Point(s.x, s.y); /* the position it was last time */
-    this.joystick.lastAngle = angle; /* the angle of this press */
-    this.joystick.lastDist = centre.distance( s ); /* distance from the circles centre */
-    this.trace.turnTraceOn(); /* show the trace lines now were aiming the gun */
-  }else {
-    if (drawMode==true){ /* the drawing a base on the screen mode is on */
-      drawing.lastPos=w;
-      game.input.addMoveCallback(pointerOnMove, this);
-      drawing.pointerId = p.id;
-      this.land.drawStartDefence(w.x, w.y, '#B020D0', DRAWING);
-    }
-  }
+  game.input.addMoveCallback(pointerOnMove, this);
 }
+
 function pointerOnMove(p) {
-  var w=screenToWorld(p);
-  var s=new Phaser.Point(p.x, p.y);
-  //console.log("Move "+p.x+","+p.y+" myWorld "+w.x.toFixed(0)+","+w.y.toFixed(0));
-  if (this.joystick && p.id == this.joystick.pointerId) {
-    var start=this.joystick.start;
-    var centre=this.joystick.centre;
-    var last = this.joystick.last;
 
-    if (this.joystick.method==1) {
-      var dist = start.distance(s);
-      var deltaX = s.x - start.x;
-      var deltaY = s.y - start.y;
-      deltaX = (deltaX / 60) * this.player.tank.speed;
-      deltaY = (deltaY / 60) * this.player.tank.speed;
-      //this.player.body.velocity.x = deltaX;
-      //this.player.body.velocity.y = deltaY;
-      this.player.gun.angleVelocity += deltaX/4000;
-      this.player.gun.powerVelocity += -deltaY/1000;
-    }
-    if (this.joystick.method==2) {
-      var lastDeltaX = s.x - last.x;
-      var lastDeltaY = s.y - last.y;
-      this.player.gun.angle += lastDeltaX * 0.50;
-      this.player.gun.power -= lastDeltaY * 2;
-    }
-    if (this.joystick.method==3) {
-      var angle = Phaser.Math.radToDeg(Phaser.Math.angleBetweenPoints(centre, s));
-      var dist = centre.distance( s );
-
-      if (dist > 20)
-        this.player.gun.angle += (angle - this.joystick.lastAngle);
-      this.player.gun.power += (dist - this.joystick.lastDist) *6;
-
-      if ( Math.abs(angle-this.joystick.lastAngle) > 2)  this.learning.trigger( JOYSTICK_MOVE );
-      if ( Math.abs(dist-this.joystick.lastDist) > 2)  this.learning.trigger( JOYSTICK_POWER_CHANGE );
-
-      this.joystick.lastAngle = angle;
-      this.joystick.lastDist = dist;
-    }
-    //Phaser.Math.wrapAngle();
-    //gun.angle = Phaser.math.clamp(gun.angle, -135, 135);
-    if (this.player.gun.angle>135) this.player.gun.angle = 135;
-    if (this.player.gun.angle<-135) this.player.gun.angle = -135;
-    this.player.gun.power = Phaser.Math.clamp(this.player.gun.power, 300, 1200);
-
-    /* Draw the joypads gun-barrel graphic */
-    this.joystick.updateJoypadBarrel();
-
-    this.joystick.last = s;
-  }
+  if (this.joystick) this.joystick.onPointerMove( p );
 
   if (p.id == drawing.pointerId) {
+    var w=screenToWorld(p);
     if (drawing.lastPos!=null){
       if (w.distance( drawing.lastPos ) > 10) {
         this.land.drawDefence(drawing.lastPos.x, drawing.lastPos.y,
-                              w.x, w.y, '#B020D0', DRAWING); /* purple */
+                        w.x, w.y, '#B020D0'/* purple */, DRAWING /* Players drawing bitmap */);
         drawing.lastPos.x = w.x;
         drawing.lastPos.y = w.y;
         this.learning.trigger( PENCIL_IMPRESSION );
