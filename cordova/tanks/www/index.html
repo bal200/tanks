@@ -56,6 +56,11 @@ var learning = new Learning();
 /************************** States definitions ************************************/
 var loadState = {  /* 'load' state */
   preload: function() {
+    /* if the full screen button is pressed, use this scale mode: */
+    game.scale.fullScreenScaleMode = Phaser.ScaleManager.RESIZE;
+    /* use the whole window up: (turn off for desktop browser) */
+    game.scale.scaleMode = Phaser.ScaleManager.RESIZE;
+
     var loadingText = game.add.text(0,0, "loading...", {font:'22px Courier', fill:'#FFF', boundsAlignH:'center'});
     loadingText.setTextBounds(0,100, game.width,100);
     game.time.advancedTiming = true;
@@ -97,10 +102,6 @@ var playState = {
 	{
     myGame=this;
     count=0;
-    /* if the full screen button is pressed, use this scale mode: */
-    game.scale.fullScreenScaleMode = Phaser.ScaleManager.RESIZE;
-    /* use the whole window up: (turn off for desktop browser) */
-    game.scale.scaleMode = Phaser.ScaleManager.RESIZE;
 
     game.physics.startSystem(Phaser.Physics.ARCADE);
     game.physics.arcade.gravity.y = 600;

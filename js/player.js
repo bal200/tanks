@@ -30,9 +30,7 @@ var Player = function(x,y, grp) {
     /************ Gun *****************/
     this.gun = {
       angle : 44,
-    //  angleVelocity:0,
-      power : 685
-    //  powerVelocity:0
+      power : 45 //685
     };
 
 };

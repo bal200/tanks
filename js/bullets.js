@@ -74,16 +74,16 @@ function fire() {
     var vec = angleToVector( gun.angle );
 
     bullet.reset(player.tank.x + (vec.x*50), player.tank.y + (vec.y*50));
-    bullet.body.velocity.x = vec.x * gun.power;
-    bullet.body.velocity.y = vec.y * gun.power;
+    var power = (gun.power *9) +300; /* gun.power is 0-100 */
+    bullet.body.velocity.x = vec.x * power;
+    bullet.body.velocity.y = vec.y * power;
     bullet.whos = PLAYER;/* the player fired it */
     audio1.play('gunshot'); /* gunshot noise */
     //bulletTime = game.time.now + 200;
-    var angDrift = game.rnd.between(-1, +2);
-    if (angDrift==+2) angDrift=0;
-    gun.angle += angDrift;
-    gun.power += game.rnd.between(-1, +1);
-    this.joystick.updateJoypadBarrel();
+    if (this.joystick) {
+      this.joystick.drift();
+      this.joystick.updateJoypadBarrel();
+    }
   }
   this.learning.trigger( FIRE_BUTTON_PRESS );
 }
@@ -160,13 +160,14 @@ Trace.prototype.updateTrace = function(player, land) {
     var startNudge = 4+ ((new Date()).getSeconds() % 2) * 15;
 
           var vec = new Phaser.Point(0,-1);
-          vec = vec.rotate(0,0, player.gun.angle, true);
+          vec = vec.rotate(0,0, gun.angle, true);
 
                               /* end of gun barrel */
     var p = new Phaser.Point(player.tank.x +(vec.x*50), player.tank.y +(vec.y*50));
     var last = new Phaser.Point(p.x, p.y);
-    var deltaX = (vec.x * gun.power) / 100;
-    var deltaY = (vec.y * gun.power) / 100;
+    var power = (gun.power *9) +300;
+    var deltaX = (vec.x * power) / 100;
+    var deltaY = (vec.y * power) / 100;
     var collision=false;
     var changeWorldScale=1;
     this.forEach(function(t) { t.kill(); });

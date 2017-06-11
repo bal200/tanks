@@ -8,24 +8,24 @@ var LAND = 1;
 var DRAWING = 2;
 var ENEMY_DRAWING = 3;
 
-var Land = function( th ) {
+var Land = function( myGame ) {
   //Phaser.Group.call(this, game); /* create a Group, the parent Class */
 
   //this.bitmap = null;  /* the actual bitmap of destructable landscape */
   //this.foreground=null; /* the large image to hold destructable landscape */
 
-  this.tilemap = game.add.tilemap('tilemap');
+  this.tilemap = game.add.tilemap(level.tilemap /*'tilemap'*/);
   this.tilemap.addTilesetImage('jungletileset_32x32', 'jungletileset');
 
   this.layer = this.tilemap.createLayer('Tile Layer 1',
-                    this.tilemap.widthInPixels, this.tilemap.heightInPixels, th.zoomable);
+                    this.tilemap.widthInPixels, this.tilemap.heightInPixels, myGame.zoomable);
   this.layer.fixedToCamera = false;
   this.layer.autoCull = false;
   // this.layer.debug = true;
   this.tilemap.setCollisionBetween(1,884); /* set all the tiles as things to bump into */
-  //th.zoomable.add(this.layer);
+  //myGame.zoomable.add(this.layer);
 
-  this.th = th;
+  this.myGame = myGame;
   this.bitmaps = []; /* list of destructable squares over the map */
 };
 
@@ -53,9 +53,9 @@ Land.prototype.tilemapToBitmap = function(tilemap, layer) {
   layer.destroy();
 
   this.bitmaps.push(bitmap);
-  this.th.zoomable.add(bitmap.image); /* add to group */
-  //if (this.th.joystick) game.world.bringToTop(this.th.joystick);
-  //game.world.bringToTop(this.th.button);
+  this.myGame.zoomable.add(bitmap.image); /* add to group */
+  //if (this.myGame.joystick) game.world.bringToTop(this.myGame.joystick);
+  //game.world.bringToTop(this.myGame.button);
   //game.world.bringToTop(drawButton);
   //game.world.bringToTop(this.bitmaps[0].image);
 };
@@ -63,7 +63,7 @@ Land.prototype.tilemapToBitmap = function(tilemap, layer) {
 Land.prototype.createBitmap = function(x1,y1, x2,y2, type) {
   var bitmap = new Bitmap(x1,y1, x2,y2, type);
   this.bitmaps.push(bitmap);
-  this.th.zoomable.add(bitmap.image); /* add to group */
+  this.myGame.zoomable.add(bitmap.image); /* add to group */
 };
 
 /* check for a pixel hit on all the bitmaps.  returns 1 if a land/drawing pixel exists at x,y */
@@ -100,11 +100,11 @@ Land.prototype.updateLand = function() {
   /* now the tilemap has been rendered, copy it to a bitmap instead, so our destructable landscape works */
   if (count == 2) {
     this.tilemapToBitmap(this.tilemap, this.layer);
-    //if (this.th.joystick) game.world.bringToTop(this.th.joystick);
-    //game.world.bringToTop(this.th.button);
+    //if (this.myGame.joystick) game.world.bringToTop(this.myGame.joystick);
+    //game.world.bringToTop(this.myGame.button);
     //game.world.bringToTop(drawButton);
     //game.world.bringToTop(this.bitmaps[0].image);
-    this.th.zoomable.sort(); /* put everything back in order of their Z depth */
+    this.myGame.zoomable.sort(); /* put everything back in order of their Z depth */
   }
 };
 
