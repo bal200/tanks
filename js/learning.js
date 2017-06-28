@@ -24,18 +24,16 @@ var Learning = function ( myGame ) {
   this.myGame = myGame;
 
 };
-Learning.prototype.firstRun = function() {
+Learning.prototype.IsfirstRun = function() {
   if (this.stage==0) return true;  else return false;
 };
 Learning.prototype.update = function(  ) {
-  if (this.stage==0 && count > 300) {
-  }
-  if (this.stage==DRAW_A_HOUSE) {
-  }
-//console.log(this.stage);
-
+  //if (this.stage==0 && count > 300) {
+  //}
+  //console.log(this.stage);
 };
 Learning.prototype.trigger = function( trigger ) {
+  if (gameMode==WIN | gameMode==LOOSE) return;
   /* wait a tad at the start before showing instructions */
   if (trigger==START_GAME && level.level==1) {
 //    this.stage=FIND_JOYSTICK;
@@ -76,7 +74,7 @@ Learning.prototype.trigger = function( trigger ) {
           this.showGraphic( SHOOT_BACK );  this.timerCB=null;
         }, this);
         createFireButton(myGame);
-        this.myGame.createJoystick();
+        if (!this.myGame.joystick) this.myGame.createJoystick();
         this.myGame.joystick.alpha = 0.0; /* hide it for now */
         if (myGame.enemy) myGame.enemy.startEnemyLogic();
 
@@ -89,6 +87,7 @@ Learning.prototype.trigger = function( trigger ) {
     this.stage = FIND_JOYSTICK; /* next stage */
     game.time.events.add(Phaser.Timer.SECOND * 6, function(){  /* wait for user to pop a few shots off */
       if (!this.learnedJoystickMove) this.showGraphic( FIND_JOYSTICK );
+      this.myGame.joystick.alpha = 1.0;
       fadeIn( this.myGame.joystick );
     }, this);
   }
@@ -179,7 +178,7 @@ Learning.prototype.removeGraphic = function( stage ) {
 Learning.prototype.finishOff = function() {
   this.queue=null;
   this.removeGraphic();
-}
+};
 
 function fadeIn ( sprite ) {
   game.add.tween(sprite).from({alpha:0.0}, 300, Phaser.Easing.Linear.None , true, 00, 0, false); /* fade in */

@@ -15,8 +15,10 @@
         <script src="js/land.js"></script>
         <script src="js/player.js"></script>
         <script src="js/bullets.js"></script>
+        <script src="js/fire.js"></script>
         <script src="js/mycam.js"></script>
         <script src="js/learning.js"></script>
+
     <script type="text/javascript">
 
 var PLAYER = 1;
@@ -41,6 +43,7 @@ var count = 0;
 var levels = [{  /* Settings for this particular level in the game */
   level:1,
   tilemap: 'tilemap',
+  background: 'background',
   x:0,  y:-1536,  /* world size */
   x2:2048, y2:1024,
   bgPercent : 0.15,  /** This percentage of the main screen Scale will be used as the Backgrounds scale.
@@ -49,7 +52,12 @@ var levels = [{  /* Settings for this particular level in the game */
     x:400, y:470  /** pull the background to the left and to the top. Tweak this to make sure the      */
   }               /** background neatly covers the whole world. */
 },{
-  level:2
+  level:2,
+  tilemap: 'tilemap',
+  background: 'background',
+  x:0,  y:-1536, x2:2048, y2:1024, /* world size */
+  bgPercent : 0.50,
+  bgOffset:{  x:150, y:170  }
 }];
 var level = levels[0];
 var learning = new Learning();
@@ -66,6 +74,8 @@ var loadState = {  /* 'load' state */
     loadingText.setTextBounds(0,100, game.width,100);
     game.time.advancedTiming = true;
     game.load.image("titlepage", "assets/titlepage.png");
+    game.load.image("titlebacking", "assets/titlebacking.png");
+    game.load.image("startbutton", "assets/startbutton.png");
     game.load.image("fullscreen", "assets/fullscreen.png");
     game.load.image("background", "assets/background 1139x892.jpg");
     game.load.image("cloud", "assets/cloud.png");
@@ -74,16 +84,24 @@ var loadState = {  /* 'load' state */
     game.load.image("tank2_right", "assets/tank2_fromVector2.png");
     game.load.image("bullet", "assets/bullet.png");
     game.load.image("trace", "assets/trace.png");
+    game.load.spritesheet("boom", "assets/boom32wh12.png",32,32,12);
+    game.load.spritesheet("fire", "assets/fire spritesheet.png",320,320);
+    game.load.spritesheet("smoke", "assets/smoke spritesheet 200wh6.png",200,200);
 
-    game.load.image("firebutton", "assets/firebutton.png");
+    //game.load.image("firebutton", "assets/firebutton.png");
     game.load.image("joypad", "assets/touchpad.png");
     game.load.image("barrel", "assets/barrel.png");
     game.load.image("barrelBar", "assets/barrelbar.png");
 
-    game.load.image("pencil", "assets/pencil.png");
+    game.load.spritesheet("buttons", "assets/buttons.png", 70,70);
+    //game.load.image("pencil", "assets/pencil.png");
     game.load.image("arrow", "assets/arrow.png");
     game.load.image("arrow2", "assets/arrow2.png");
-    game.load.spritesheet("boom", "assets/boom32wh12.png",32,32,12);
+
+    game.load.image("restartbutton", "assets/restart button.png");
+    game.load.image("restartbuttongrey", "assets/restart button grey.png");
+    game.load.image("nextbutton", "assets/next button.png");
+    game.load.image("homebuttongrey", "assets/home button grey.png");
 
     game.load.tilemap('tilemap', 'assets/tilemap.json', null, Phaser.Tilemap.TILED_JSON);
     game.load.image('jungletileset', 'assets/jungletileset_32x32.png');
@@ -109,7 +127,7 @@ var playState = {
 
     /******* Parallax Background ********/
     this.background = new Parallax(level.bgPercent, level.bgOffset); /* the background group is zoomed differently */
-    this.background.theImage = game.add.sprite(0, 0, 'background');
+    this.background.theImage = game.add.sprite(0, 0, level.background /*'background'*/);
     this.background.add( this.background.theImage );
     this.background.z = 1;
 
@@ -135,19 +153,21 @@ var playState = {
     this.land.createBitmap(130,300, 800,640, DRAWING); /* players drawing area */
     this.land.createBitmap(1050,200, 1800,640, ENEMY_DRAWING); /* enemys drawing bitmap area */
 
-    this.static = game.add.group(); /* things fixed to the screen, like controls in here, excluded from zoom */
+    this.static = game.add.group(); /* things fixed to the screen, like buttons, excluded from zoom */
 
     /************ Bullets *****************/
-    //createBullets(this);
     this.bullets = new Bullets( this.land, this.zoomable);
     this.trace = new Trace( this.zoomable );
+    /*** Fire animation handler ***/
+    this.fire = new Fire(this.land, this.zoomable);
 
     /******* Player ********************/
     this.player = new Player(430, 616, this.zoomable);
-    this.player.tank.events.onKilled.add(this.gameFinish, this);
+    this.player.tank.events.onKilled.add(this.playerKilled, this);
 
     this.enemy = new Enemy(this.bullets, this.land, this.zoomable);
-    this.enemy.tank.events.onKilled.add(this.gameFinish, this);
+    this.enemy.tank.events.onKilled.add(this.enemyKilled, this);
+    //this.enemy.tank.events.onKilled.add(function(){ console.log(arguments); }, this);
 
     game.world.setBounds(level.x, level.y, level.x2-level.x, level.y2-level.y);
 
@@ -269,10 +289,10 @@ var playState = {
                       || '--', 2, 14, "#00ff00");
   },
   startGame: function() {
-    /* After the title screen, called when user presses Play button */
+    /* After the title screen, called when user presses Play button. begin Play */
     gameMode = GAME; /* Start Game */
     createDrawButton(this);
-    if (!this.learning.firstRun()) {
+    if (!this.learning.IsfirstRun()) {
       this.joystick=new Joystick(this.player);
       this.screenFix.add( this.joystick, this.joystick.center.x, -this.joystick.center.y, 1.0 );
       createFireButton(this);
@@ -280,18 +300,21 @@ var playState = {
     }
     this.learning.trigger( START_GAME );
   },
-  gameFinish: function( tank ) {
-    /* Show the Finish screen */
-    gameMode=WIN;
+  gameFinish: function( win_or_loose ) {
+    /* Show the Win / loose page, and stop play, but keep sprites running */
+    gameMode = win_or_loose;
     /* stop stuff */
     this.enemy.stopEnemyLogic();
     this.trace.traceOn=false;
+    this.learning.finishOff();
     /* show a finish screen */
-    this.finishPage = game.add.button(game.width/2,game.height/2, 'titlepage', this.gameClose, this,0,0,0);
-    this.finishPage.anchor.set(0.5,0.5);
-    this.screenFix.add(this.finishPage, game.width/2, game.height/2, 1.0);
+    drawTitlePage(win_or_loose);
+  //  this.finishPage = game.add.button(game.width/2,game.height/2, 'titlepage', this.gameClose, this,0,0,0);
+  //  this.finishPage.anchor.set(0.5,0.5);
+  //  this.screenFix.add(this.finishPage, game.width/2, game.height/2, 1.0);
   },
   gameClose: function() {
+    /* Close down the myGame object. to black screen */
     game.camera.fade(0x000000, 300);  /* fade to black */
     game.time.events.add(300, function() {
       gameMode=GAME; /* dont want the title screen, just straight into game play */
@@ -315,9 +338,52 @@ var playState = {
   createJoystick: function() {
     this.joystick=new Joystick(this.player);
     this.screenFix.add( this.joystick, this.joystick.center.x, -this.joystick.center.y, 1.0 );
+  },
+  playerKilled: function( player ) {
+    this.gameFinish(LOOSE);
+  },
+  enemyKilled: function( enemy ) {
+    this.gameFinish(WIN);
   }
 };
 
+/********************** TITLE PAGES & WIN PAGE ****************************************/
+/**************************************************************************************/
+function drawTitlePage( type ) {
+  var group = game.add.group(); group.x = game.width/2; group.y = game.height/2;
+
+  var backing = game.add.sprite(0,0, 'titlebacking');
+  backing.anchor.set(0.5,0.5);
+  group.add(backing);
+
+  if (type==WIN) {
+    nextButton = game.add.button(120,90, 'nextbutton', function(){
+      level=levels[1];
+      myGame.gameClose();
+    }, this,0,0,0);
+    nextButton.anchor.set(0.5,0.5);
+    group.add(nextButton);
+    startButton = game.add.button(0,90, 'restartbuttongrey', function(){
+      myGame.gameClose(); /* this will restart the game too */
+    }, this,0,0,0);
+    var text="You Win!";
+  }
+  if (type==LOOSE) {
+    startButton = game.add.button(0,90, 'restartbutton', function(){
+      myGame.gameClose(); /* this will restart the game too */
+    }, this,0,0,0);
+    var text="Try again";
+  }
+  startButton.anchor.set(0.5,0.5);
+  group.add(startButton);
+
+  var texttitle = game.add.text(0,0, text,
+      {font:'bold 30px Courier', fill:'#FFF', boundsAlignH:'center'/*, boundsAlignV:'middle'*/ });
+  texttitle.setShadow(1, 1, 'rgba(0,0,0,1.0)', 2);
+  texttitle.setTextBounds(-100,-80, 200,100);
+  group.add(texttitle);
+  myGame.screenFix.add(group, game.width/2, game.height/2, 1.0);
+}
 function titlePageStartPress() {
   /* Fade out the title page */
   game.add.tween(titlePage).to({alpha:0}, 400, null, true, 0, 0, false) /* fade out title screen */
@@ -373,7 +439,7 @@ ScreenFix.prototype.remove = function( itm ) {
 /*************** Fire Button ********************/
 function createFireButton(th) {
     /* button */
-    th.button = game.add.button(0,0, 'firebutton', fire, th,0,0,0);
+    th.button = game.add.button(0,0, 'buttons', fire, th, 0,0,1,0);
     th.button.anchor.set(0.5,0.5);
     th.screenFix.add(th.button, -60, -60, 1.0);
     fadeIn(th.button);
@@ -381,19 +447,18 @@ function createFireButton(th) {
 
 /************ Drawing Pencil Button **************/
 function createDrawButton(th) {
-    drawButton = game.add.button(0,0, 'pencil', drawPress.bind(th), this,0,0,0);
-    drawButton.alpha = 0.7;
+    drawButton = game.add.button(0,0, 'buttons', drawPress.bind(th), this, 2,2,2,2);
     drawButton.anchor.setTo(0.5,0.5);
     th.screenFix.add(drawButton, 60, -230, 1.0);
 }
 function drawPress() { /* the drawing pencil button pressed */
-  if(drawMode==false)  {drawMode=true; drawButton.alpha=0.97}
-  else  {drawMode=false; drawButton.alpha=0.7}
+  if(drawMode==false)  {drawMode=true; drawButton.setFrames(3,3,3,3); }
+  else {drawMode=false; drawButton.setFrames(2,2,2,2); }
   this.trace.turnTraceOff();
   this.learning.trigger( DRAW_BUTTON_PRESS );
 }
 function drawOff(){
-  if (drawMode==true) {drawMode=false; drawButton.alpha=0.6;}
+  if (drawMode==true) {drawMode=false; drawButton.setFrames(2,2,2,2); }
 }
 
 function fullScreenButtonPress() {
@@ -417,7 +482,6 @@ function pointerOnDown(p) {
   }
   game.input.addMoveCallback(pointerOnMove, this);
 }
-
 function pointerOnMove(p) {
 
   if (this.joystick) this.joystick.onPointerMove( p );
@@ -437,7 +501,6 @@ function pointerOnMove(p) {
   }
 
 }
-
 function pointerOnUp(p) {
   var w=screenToWorld(p);
   //console.log("up "+p.x+","+p.y+" myWorld "+w.x.toFixed(0)+","+w.y.toFixed(0));

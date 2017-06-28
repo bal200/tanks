@@ -16,7 +16,7 @@ var Bullets = function ( land, group ) {
   for (var i = 0; i < 50; i++)
   {
       var b = this.create(0, 0, 'bullet');
-      b.name = 'bullet' + i;
+      //b.name = 'bullet' + i;
       //b.body.drag = {x:70.5, y:70.5};
       b.exists = false;  b.visible = false;
       b.checkWorldBounds = true;
@@ -34,7 +34,7 @@ var Bullets = function ( land, group ) {
   this.explosions.createMultiple(10, 'boom');
   group.add( this.explosions );
   this.explosions.forEach(function(exp) {
-    exp.anchor.x = 0.5; exp.anchor.y = 0.5;
+    exp.anchor.set(0.5, 0.5);
     exp.animations.add('boom');
   });
 
@@ -104,6 +104,7 @@ Bullets.prototype.checkBulletsToLand = function () {
     }
       if (land.checkBitmapForHit(x,y, bullet.whos) > 0) {
         this.explode(bullet, land);
+        /* Erase a Circle in the land to make a crater */
         land.drawCrater(bullet.lastX, bullet.lastY, 16, /*exclude*/LAND);
         game.camera.shake(0.0010, 100); /* shake the screen a bit! */
       }
@@ -121,8 +122,6 @@ Bullets.prototype.explode = function ( bullet, land ) {
     exp.play('boom', 30, false, true);
     audio1.play('boom'); /* boom noise */
   }
-  /* Erase a Circle in the land to make a crater */
-  //if (land) this.land.drawCrater(bullet.lastX, bullet.lastY, 16, /*exclude*/LAND);
   bullet.kill();
 };
 

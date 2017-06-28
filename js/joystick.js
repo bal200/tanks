@@ -29,8 +29,7 @@ var Joystick = function ( player ) {
 
     this.add( this.barrel );
     this.updateJoypadBarrel();
-    fadeIn(this);
-//alert("th.gun.angle; " + th.gun.angle);
+    //fadeIn(this);
 };
 inheritPrototype(Joystick, Phaser.Group);
 
