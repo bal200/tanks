@@ -107,7 +107,7 @@ Land.prototype.updateLand = function() {
     this.myGame.zoomable.sort(); /* put everything back in order of their Z depth */
   }
   if (count == 200)
-    myGame.fire.setFire (250,500);
+    myGame.fire.setFire (myGame.player.tank.x, myGame.player.tank.y+10, 0.50);
 
 };
 
