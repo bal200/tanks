@@ -40,7 +40,7 @@ var gameMode = TITLE_SCREEN; /* 1=Title Screen,  2=Game,  3=Win, 4=Loose */
 var titlePage;
 var count = 0;
 
-var levels = [{  /* Settings for this particular level in the game */
+var levels = [{},{  /* Settings for this particular level in the game */
   level:1,
   tilemap: 'tilemap',
   background: 'background',
@@ -59,7 +59,7 @@ var levels = [{  /* Settings for this particular level in the game */
   bgPercent : 0.50,
   bgOffset:{  x:150, y:170  }
 }];
-var level = levels[0];
+var level = levels[1];
 var learning = new Learning();
 
 /************************** States definitions ************************************/
@@ -76,7 +76,12 @@ var loadState = {  /* 'load' state */
     game.load.image("titlepage", "assets/titlepage.png");
     game.load.image("titlebacking", "assets/titlebacking.png");
     game.load.image("startbutton", "assets/startbutton.png");
-    game.load.image("fullscreen", "assets/fullscreen.png");
+    game.load.image("restartbutton", "assets/restart button.png");
+    game.load.image("restartbuttongrey", "assets/restart button grey.png");
+    game.load.image("nextbutton", "assets/next button.png");
+    game.load.image("homebuttongrey", "assets/home button grey.png");
+    game.load.image("fullscreenbutton", "assets/fullscreenbutton.png");
+
     game.load.image("background", "assets/background 1139x892.jpg");
     game.load.image("cloud", "assets/cloud.png");
     game.load.image("tank_right", "assets/tank_right.png");
@@ -84,24 +89,19 @@ var loadState = {  /* 'load' state */
     game.load.image("tank2_right", "assets/tank2_fromVector2.png");
     game.load.image("bullet", "assets/bullet.png");
     game.load.image("trace", "assets/trace.png");
+
     game.load.spritesheet("boom", "assets/boom32wh12.png",32,32,12);
     game.load.spritesheet("fire", "assets/fire spritesheet.png",320,320);
     game.load.spritesheet("smoke", "assets/smoke spritesheet 200wh6.png",200,200);
+    game.load.spritesheet("bigboom", "assets/explosion96wh.png",96,96);
 
-    //game.load.image("firebutton", "assets/firebutton.png");
     game.load.image("joypad", "assets/touchpad.png");
     game.load.image("barrel", "assets/barrel.png");
     game.load.image("barrelBar", "assets/barrelbar.png");
 
-    game.load.spritesheet("buttons", "assets/buttons.png", 70,70);
-    //game.load.image("pencil", "assets/pencil.png");
+    game.load.spritesheet("buttons", "assets/buttons.png", 70,70); /* in game buttons, fire, pencil */
     game.load.image("arrow", "assets/arrow.png");
     game.load.image("arrow2", "assets/arrow2.png");
-
-    game.load.image("restartbutton", "assets/restart button.png");
-    game.load.image("restartbuttongrey", "assets/restart button grey.png");
-    game.load.image("nextbutton", "assets/next button.png");
-    game.load.image("homebuttongrey", "assets/home button grey.png");
 
     game.load.tilemap('tilemap', 'assets/tilemap.json', null, Phaser.Tilemap.TILED_JSON);
     game.load.image('jungletileset', 'assets/jungletileset_32x32.png');
@@ -161,14 +161,14 @@ var playState = {
 
     /******* Player ********************/
     this.player = new Player(430, 616, this.zoomable);
-    this.player.tank.events.onKilled.add(this.playerKilled, this);
+    //this.player.tank.events.onKilled.add(this.playerKilled, this);
 
     this.enemy = new Enemy(this.bullets, this.land, this.zoomable);
-    this.enemy.tank.events.onKilled.add(this.enemyKilled, this);
-    //this.enemy.tank.events.onKilled.add(function(){ console.log(arguments); }, this);
+    //this.enemy.tank.events.onKilled.add(this.enemyKilled, this);
 
     /*** Fire animation Controller ***/
     this.fire = new Fire(this.land, this.zoomable);
+    this.explosions = new Explosions( this.zoomable );
 
     game.world.setBounds(level.x, level.y, level.x2-level.x, level.y2-level.y);
 
@@ -188,19 +188,22 @@ var playState = {
 
     this.learning = learning;  learning.myGame=this;
 
+    this.fullScreenButton = game.add.button(0,0, 'fullscreenbutton', fullScreenButtonPress, this,0,0,0);
+    this.screenFix.add(this.fullScreenButton, 10, 10, 1.0);
+
     if (gameMode==TITLE_SCREEN) {
       titlePage = game.add.button(game.width/2,game.height/2, 'titlepage', titlePageStartPress, this,0,0,0);
       titlePage.anchor.set(0.5,0.5);
       this.screenFix.add(titlePage, game.width/2, game.height/2, 1.0);
-    }else if (gameMode==GAME)
-      this.startGame();
 
-    this.fullScreenButton = game.add.button(0,0, 'fullscreen', fullScreenButtonPress, this,0,0,0);
-    this.screenFix.add(this.fullScreenButton, 10, 10, 1.0);
+      /****** My Camera *****************/
+      createMyCam(this, /*start coords*/430,-100, /* starting scale*/1.5);
 
+    }else if (gameMode==GAME) {
+      createMyCam(this, this.player.tank.x, this.player.tank.y, 1.0);
+      this.startPlay();
+    }
 
-    /****** My Camera *****************/
-    createMyCam(this);
 
     audio1 = game.add.audio('audio1');
     audio1.allowMultiple = true;
@@ -289,7 +292,7 @@ var playState = {
                       +" gun "+this.player.gun.angle.toFixed(1)+"a "+this.player.gun.power.toFixed(1)+"p"
                       || '--', 2, 14, "#00ff00");
   },
-  startGame: function() {
+  startPlay: function() {
     /* After the title screen, called when user presses Play button. begin Play */
     gameMode = GAME; /* Start Game */
     createDrawButton(this);
@@ -301,24 +304,22 @@ var playState = {
     }
     this.learning.trigger( START_GAME );
   },
-  gameFinish: function( win_or_loose ) {
+  finishPlay: function( win_or_loose ) {
     /* Show the Win / loose page, and stop play, but keep sprites running */
     gameMode = win_or_loose;
     /* stop stuff */
     this.enemy.stopEnemyLogic();
     this.trace.traceOn=false;
-    this.learning.finishOff();
+    this.learning.finishPlay();
     /* show a finish screen */
     drawTitlePage(win_or_loose);
-  //  this.finishPage = game.add.button(game.width/2,game.height/2, 'titlepage', this.gameClose, this,0,0,0);
-  //  this.finishPage.anchor.set(0.5,0.5);
-  //  this.screenFix.add(this.finishPage, game.width/2, game.height/2, 1.0);
   },
-  gameClose: function() {
+
+  closeGame: function(newGameMode) {
     /* Close down the myGame object. to black screen */
     game.camera.fade(0x000000, 300);  /* fade to black */
     game.time.events.add(300, function() {
-      gameMode=GAME; /* dont want the title screen, just straight into game play */
+      gameMode=newGameMode; /* dont want the title screen, just straight into game play */
       /* destroys and respawns a new Game object */
       game.state.restart();
     }, this);
@@ -341,10 +342,10 @@ var playState = {
     this.screenFix.add( this.joystick, this.joystick.center.x, -this.joystick.center.y, 1.0 );
   },
   playerKilled: function( player ) {
-    this.gameFinish(LOOSE);
+    this.finishPlay(LOOSE);
   },
   enemyKilled: function( enemy ) {
-    this.gameFinish(WIN);
+    this.finishPlay(WIN);
   }
 };
 
@@ -359,24 +360,31 @@ function drawTitlePage( type ) {
 
   if (type==WIN) {
     nextButton = game.add.button(120,90, 'nextbutton', function(){
-      level=levels[1];
-      myGame.gameClose();
+      level=levels[level.level+1]; /* next level */
+      myGame.closeGame(GAME);
     }, this,0,0,0);
     nextButton.anchor.set(0.5,0.5);
     group.add(nextButton);
     startButton = game.add.button(0,90, 'restartbuttongrey', function(){
-      myGame.gameClose(); /* this will restart the game too */
+      myGame.closeGame(GAME); /* this will restart the game too */
     }, this,0,0,0);
     var text="You Win!";
   }
   if (type==LOOSE) {
     startButton = game.add.button(0,90, 'restartbutton', function(){
-      myGame.gameClose(); /* this will restart the game too */
+      myGame.closeGame(GAME); /* this will restart the game too */
     }, this,0,0,0);
     var text="Try again";
   }
   startButton.anchor.set(0.5,0.5);
   group.add(startButton);
+
+  homebutton = game.add.button(-120,90, 'homebuttongrey', function(){
+    level=levels[1]; /* the title screen is part of level 1 */
+    myGame.closeGame(TITLE_SCREEN);
+  });
+  homebutton.anchor.set(0.5,0.5);
+  group.add(homebutton);
 
   var texttitle = game.add.text(0,0, text,
       {font:'bold 30px Courier', fill:'#FFF', boundsAlignH:'center'/*, boundsAlignV:'middle'*/ });
@@ -384,19 +392,23 @@ function drawTitlePage( type ) {
   texttitle.setTextBounds(-100,-80, 200,100);
   group.add(texttitle);
   myGame.screenFix.add(group, game.width/2, game.height/2, 1.0);
+  group.alpha = 0;
+  game.add.tween(group).to({alpha: 1.00}, /*duration*/150,
+                Phaser.Easing.Linear.None, /*autostart*/true, /*delay*/3000, /*repeat*/0, /*yoyo*/false);
 }
+
 function titlePageStartPress() {
   /* Fade out the title page */
   game.add.tween(titlePage).to({alpha:0}, 400, null, true, 0, 0, false) /* fade out title screen */
                            .onComplete.add(function(sprite, tween){
                               this.screenFix.remove(sprite);
                               sprite.destroy();
-                              this.startGame();
+                              this.startPlay();
                            }, this);
 
   /* Cause the camera to tween down from the sky to the tank */
   camTarget.setTo(this.player.tank.x, this.player.tank.y);
-  //this.startGame();
+  //this.startPlay();
 
 }
 

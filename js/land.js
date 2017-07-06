@@ -106,9 +106,10 @@ Land.prototype.updateLand = function() {
     //game.world.bringToTop(this.bitmaps[0].image);
     this.myGame.zoomable.sort(); /* put everything back in order of their Z depth */
   }
-  if (count == 200)
-    myGame.fire.setFire (myGame.player.tank.x, myGame.player.tank.y+10, 0.50);
-
+  //if (count == 200) {
+  //  myGame.fire.setFire (myGame.player.tank.x, myGame.player.tank.y+10, 0.50);
+  //  myGame.fire.setFire (myGame.player.tank.x+300, myGame.player.tank.y+10, 1.00);
+  //}
 };
 
 /* collision detect between land, and to bullet or trace */

@@ -20,18 +20,18 @@
 
 //}
 
-function createMyCam(th) {
+function createMyCam(th, startx, starty, start_scale) {
 
     game.scale.onFullScreenChange.add(function() { /* re-do the scaling if we go full screen */
       setWorldScale();
     });
 
     /****** My Camera *****************/
-    camTarget.setTo(430, -100);
-    cameraMidPos.setTo(430, -100); /* (player.x, 540) @todo: find a good cam start point */
+    camTarget.setTo(startx, starty);
+    cameraMidPos.setTo(startx, starty); /* (player.x, 540) @todo: find a good cam start point */
     //this.game.camera.reset();
     setWorldScale( 1 /*Mode 1*/ );
-    worldScale=1.5;
+    worldScale=start_scale;
     game.camera.bounds = null; /* Stop the Phaser builtin camera from messing with our zoom code */
 }
 

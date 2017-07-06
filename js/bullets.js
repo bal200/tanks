@@ -55,14 +55,15 @@ Bullets.prototype.updateBullets = function() {
   }, this);
 
   var bullets=this;
-  game.physics.arcade.collide(this, this.land.layer, function(bullet, land) {
+  //game.physics.arcade.collide(this, this.land.layer, function(bullet, land) {
     //alert("here! "+bullet.x+", "+bullet.y);
-    bullets.explode(bullet, land);
-    bullet.kill();
-  });
+  //  bullets.explode(bullet, land);
+  //  bullet.kill();
+  //});
 
 };
 
+/*  Player Shoots off a new bullet */
 function fire() {
   var player = this.player;
   var gun = this.player.gun;  /* just to shorten some variable names */
@@ -100,7 +101,7 @@ Bullets.prototype.checkBulletsToLand = function () {
     /* screen zoom out trigger */
     if (bullet.whos==1) {
       var o=checkBulletForCameraMove(x,y);
-      if (o>over) over=o;
+      if (o>over) over=o; /* find the furthest bullets x coord */
     }
       if (land.checkBitmapForHit(x,y, bullet.whos) > 0) {
         this.explode(bullet, land);
@@ -111,15 +112,15 @@ Bullets.prototype.checkBulletsToLand = function () {
     bullet.lastX = x;
     bullet.lastY = y;
   }, this);
-
+  /* If bullets are far over the page, we may need to zoom out a bit to see all action */
   changeScaleMode(over);
-
 };
 
+/* handles a bullet exploding, create its explosion graphic, and sound effect */
 Bullets.prototype.explode = function ( bullet, land ) {
   if (exp=this.explosions.getFirstExists(false)) {
     exp.reset(Math.floor(bullet.x), Math.floor(bullet.y));
-    exp.play('boom', 30, false, true);
+    exp.play('boom', /*framerate*/30, /*loop*/false, /*killoncomplete*/true);
     audio1.play('boom'); /* boom noise */
   }
   bullet.kill();
@@ -127,10 +128,13 @@ Bullets.prototype.explode = function ( bullet, land ) {
 
 function tankToBulletsHandler(tank, bullet) {
   /* Weve hit a tank ! */
-  tank.damage(40);
+  //if (tank.alive) {
+    tank.damage(40);
+    game.camera.shake(0.0020, 250); /* shake the screen a bit! */
+  //}
   this.bullets.explode(bullet, null);
-  game.camera.shake(0.0020, 250); /* shake the screen a bit! */
 }
+
 
 
 /*********************** Trace Lines ******************************************/

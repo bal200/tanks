@@ -8,7 +8,7 @@ var Fire = function( land, group ) {
 
   /* a collection of sprites to tween for a Smoke effect */
   this.smokes = game.add.group();
-  this.smokes.createMultiple(20, 'smoke');
+  this.smokes.createMultiple(30, 'smoke');
   group.add( this.smokes );
   this.smokes.forEach(function(smoke) {
     smoke.anchor.set(0.5, 0.5);
@@ -39,7 +39,7 @@ Fire.prototype.setFire = function(x,y, size) {
     fire.scale.set(size);
     //this.smokePuff(x,y, 1);
     fire.smokeTimer = game.time.events.repeat(Phaser.Timer.SECOND * 0.8, 50, function(fire){
-      this.smokePuff(x,y, fire.scale.x);
+      this.smokePuff(fire.x,fire.y, fire.scale.x);
       game.add.tween(fire.scale).to({x: fire.scale.x*0.95, y: fire.scale.y*0.95}, /*duration*/200,
                     Phaser.Easing.Linear.None , /*autostart*/true, /*delay*/0, /*repeat*/0, /*yoyo*/false);
       if(fire.scale.x < 0.20) { /* too small, lets fizzle out */
@@ -49,6 +49,7 @@ Fire.prototype.setFire = function(x,y, size) {
     }, this, fire);
 
   }
+  myGame.explosions.explode(x,y, /*scale*/2.1);
 
 };
 
@@ -57,16 +58,49 @@ Fire.prototype.smokePuff = function(x,y, size) {
   if (smoke) {
     smoke.reset(x,y -(size * 120));
     smoke.scale.set(size /*0.40*/);
+    smoke.alpha=1.0;
     smoke.frame = Math.floor(game.rnd.between(1, 6));
     /* Tween the smoke upwards and fade out */
     game.add.tween(smoke).to({y: y-400, alpha: 0.0}, /*duration*/5000,
-                  Phaser.Easing.Linear.None , /*autostart*/false, /*delay*/0, /*repeat*/0, /*yoyo*/false)
-                //  .loop()
-                  .start();
+                  Phaser.Easing.Linear.None , /*autostart*/true, /*delay*/0, /*repeat*/0, /*yoyo*/false)
+                  .onComplete.add(function(smoke, tween){
+                    smoke.kill();
+                  });
     /* Tween the smoke to get slowly bigger */
     game.add.tween(smoke.scale).to({x:2.2,y:2.2}, /*duration*/5000,
-                  Phaser.Easing.Linear.None , /*autostart*/false, /*delay*/0, /*repeat*/0, /*yoyo*/false)
-                //  .loop()
-                  .start();
+                  Phaser.Easing.Linear.None , /*autostart*/true, /*delay*/0, /*repeat*/0, /*yoyo*/false);
   }
+};
+
+
+/******************** Explosions group ****************************************/
+/******************************************************************************/
+var Explosions = function ( group ) {
+  Phaser.Group.call(this, game); /* create a Group, the parent Class */
+
+  /******* Explosions group ********/
+  //this.z = 45;
+  this.createMultiple(10, 'bigboom'/*sprite sheet*/);
+  group.add( this );
+  this.forEach(function(exp) {
+    exp.anchor.set(0.5, 0.5);
+    exp.animations.add('bigboom');
+  });
+
+};
+inheritPrototype(Explosions, Phaser.Group);
+
+/* create a big explosion graphic */
+Explosions.prototype.explode = function ( x,y, size ) {
+  if (exp=this.getFirstExists(false)) {
+    exp.reset(Math.floor(x), Math.floor(y));
+    exp.anchor.set(0.5,0.5);
+    exp.scale.set(size /*0.40*/);
+    exp.play('bigboom', /*framerate*/40, /*loop*/false, /*killoncomplete*/true);
+    //audio1.play('boom'); /* boom noise */
+  }
+  myGame.fire.smokePuff(x,y, size);
+
+  /* Some sparks? */
+
 };

@@ -26,6 +26,12 @@ var Player = function(x,y, grp) {
     grp.add(this); /* add the tank to the zoomable group */
     this.tank.onPlatform=false; /* used by my land-roving code */
     this.tank.health=100;
+    this.tank.events.onKilled.add(function(tank){
+      myGame.fire.setFire(tank.x, tank.y+10, 0.50);
+      /* TODO: change sprite to charred remains frame */
+      tank.exists=true; tank.visible=true; /* although its Killed, we need the charred remains to stay */
+      myGame.finishPlay( LOOSE );
+    } ,this);
 
     /************ Gun *****************/
     this.gun = {
@@ -37,9 +43,7 @@ var Player = function(x,y, grp) {
 inheritPrototype(Player, Phaser.Group);
 
 Player.prototype.updatePlayer = function( land ) {
-
-
-
+  /* nothing needed here yet */
 };
 
 function collisionTankToLand( tank, land ) {
@@ -72,6 +76,19 @@ var Enemy = function( bullets, land, group ) {
   //this.tank.body.setSize(48,62, 16,5);
   this.tank.onPlatform=false;
   this.tank.health=100;
+  this.tank.events.onKilled.add(function(tank){
+    myGame.fire.setFire(tank.x, tank.y+10, 0.50);
+    /* TODO: change sprite to charred remains frame */
+    tank.exists=true; tank.visible=true; /* although its Killed, we need the charred remains to stay */
+    /* TODO: check the array of tanks for more alive */
+    myGame.finishPlay( WIN );
+  } ,this);
+
+  this.tank.events.onKilled.add(function(tank){
+    myGame.fire.setFire(tank.x, tank.y+10, 0.50);
+
+  } ,this);
+
   this.add( this.tank );
   group.add( this );
 

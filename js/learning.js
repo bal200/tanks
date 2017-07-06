@@ -22,6 +22,7 @@ var Learning = function ( myGame ) {
   this.learnedJoystickMove =false;
   this.learnedJoystickPower =false;
   this.myGame = myGame;
+  this.paused = false;  /* learning is paused when play finishes, eg at Game over screen */
 
 };
 Learning.prototype.IsfirstRun = function() {
@@ -33,7 +34,7 @@ Learning.prototype.update = function(  ) {
   //console.log(this.stage);
 };
 Learning.prototype.trigger = function( trigger ) {
-  if (gameMode==WIN | gameMode==LOOSE) return;
+  if (gameMode==WIN || gameMode==LOOSE) return;
   /* wait a tad at the start before showing instructions */
   if (trigger==START_GAME && level.level==1) {
 //    this.stage=FIND_JOYSTICK;
@@ -175,7 +176,7 @@ Learning.prototype.removeGraphic = function( stage ) {
     }
   }, this);
 };
-Learning.prototype.finishOff = function() {
+Learning.prototype.finishPlay = function() {
   this.queue=null;
   this.removeGraphic();
 };
