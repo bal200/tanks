@@ -40,25 +40,54 @@ var gameMode = TITLE_SCREEN; /* 1=Title Screen,  2=Game,  3=Win, 4=Loose */
 var titlePage;
 var count = 0;
 
-var levels = [{},{  /* Settings for this particular level in the game */
+var levels = [{},{  /* Settings for each level in the game */
   level:1,
-  tilemap: 'tilemap',
-  background: 'background',
+  tilemap: 'tilemap', tilelayer: 'Tile Layer 1',
   x:0,  y:-1536,  /* world size */
   x2:2048, y2:1024,
+  background: 'background',
   bgPercent : 0.15,  /** This percentage of the main screen Scale will be used as the Backgrounds scale.
                       ** Small values = a slow moving distant background */
   bgOffset:{      /** Because the background maths is calculated from the screen middle, you may need to */
     x:400, y:470  /** pull the background to the left and to the top. Tweak this to make sure the      */
-  }               /** background neatly covers the whole world. */
+  },              /** background neatly covers the whole world. */
+  scaleModes:[
+    {scale:1.0, screenBottom:730, trigger:0},
+    {scale:0.59, screenBottom:960, trigger:800},
+    {scale:0.49, screenBottom:960, trigger:1600}
+  ],
+  player: {x:430, y:616},
+  enemy: [{x:1400, y:607, type:1}]
 },{
   level:2,
-  tilemap: 'tilemap',
-  background: 'background',
+  tilemap: 'tilemap', tilelayer: 'Tile Layer 2',
   x:0,  y:-1536, x2:2048, y2:1024, /* world size */
-  bgPercent : 0.50,
-  bgOffset:{  x:150, y:170  }
+  background: 'background',
+  bgPercent : 0.15, bgOffset:{ x:900, y:470 },
+  scaleModes:[
+    {scale:1.0, screenBottom:750, trigger:0},
+    {scale:0.59, screenBottom:960, trigger:1000},
+    {scale:0.49, screenBottom:960, trigger:1300},
+    {scale:0.44, screenBottom:960, trigger:1600}
+  ],
+  player: {x:430, y:616},
+  enemy: [{x:1400, y:607, type:1}]
+},{
+  level:3,
+  tilemap: 'tilemap', tilelayer: 'Tile Layer 3',
+  x:0,  y:-1536, x2:2048, y2:1024, /* world size */
+  background: 'background',
+  bgPercent : 0.15, bgOffset:{ x:1400, y:300 },
+  scaleModes:[
+    {scale:0.95, screenBottom:690, trigger:0},
+    {scale:0.59, screenBottom:960, trigger:1000},
+    {scale:0.49, screenBottom:960, trigger:1300},
+    {scale:0.44, screenBottom:960, trigger:1950}
+  ],
+  player: {x:300, y:416},
+  enemy: [{x:1200, y:707, type:1}]
 }];
+
 var level = levels[1];
 var learning = new Learning();
 
@@ -82,16 +111,17 @@ var loadState = {  /* 'load' state */
     game.load.image("homebuttongrey", "assets/home button grey.png");
     game.load.image("fullscreenbutton", "assets/fullscreenbutton.png");
 
-    game.load.image("background", "assets/background 1139x892.jpg");
+    game.load.image("background", "assets/background2200x862.png");
     game.load.image("cloud", "assets/cloud.png");
-    game.load.image("tank_right", "assets/tank_right.png");
+    //game.load.image("tank_right", "assets/tank_right.png");
     game.load.image("tank_left", "assets/tank_left.png");
     game.load.image("tank2_right", "assets/tank2_fromVector2.png");
     game.load.image("bullet", "assets/bullet.png");
     game.load.image("trace", "assets/trace.png");
+    game.load.spritesheet("tanks", "assets/tanks spritesheet88wh.png",88,88);
 
     game.load.spritesheet("boom", "assets/boom32wh12.png",32,32,12);
-    game.load.spritesheet("fire", "assets/fire spritesheet.png",320,320);
+    game.load.spritesheet("fire", "assets/fire spritesheet200wh.png",200,200);
     game.load.spritesheet("smoke", "assets/smoke spritesheet 200wh6.png",200,200);
     game.load.spritesheet("bigboom", "assets/explosion96wh.png",96,96);
 
@@ -103,7 +133,7 @@ var loadState = {  /* 'load' state */
     game.load.image("arrow", "assets/arrow.png");
     game.load.image("arrow2", "assets/arrow2.png");
 
-    game.load.tilemap('tilemap', 'assets/tilemap.json', null, Phaser.Tilemap.TILED_JSON);
+    game.load.tilemap('tilemap', 'assets/tilemap multi.json', null, Phaser.Tilemap.TILED_JSON);
     game.load.image('jungletileset', 'assets/jungletileset_32x32.png');
     /* Audio */
     game.load.audio('audio1', 'assets/audio/Wood Hits.wav');
@@ -132,15 +162,15 @@ var playState = {
     this.background.z = 1;
 
     /******* Make some Clouds! **********/
-    var cld=game.add.sprite(60, 300, 'cloud'); cld.alpha=0.4; cld.scale.set(0.6);
+    var cld=game.add.sprite(60, 350, 'cloud'); cld.alpha=0.4; cld.scale.set(0.6);
     game.add.tween(cld).to({x:1100}, 140000, null, true, 0, 0, false).onComplete.add(cloudLoop, this);
     this.background.add( cld );
 
-    cld=game.add.sprite(400, 200, 'cloud'); cld.alpha=0.5; cld.scale.set(0.8);
+    cld=game.add.sprite(400, 210, 'cloud'); cld.alpha=0.5; cld.scale.set(0.8);
     game.add.tween(cld).to({x:1100}, 100000, null, true, 0, 0, false).onComplete.add(cloudLoop, this);
     this.background.add( cld );
 
-    cld=game.add.sprite(700, 310, 'cloud'); cld.alpha=0.6; cld.scale.set(0.7);
+    cld=game.add.sprite(700, 360, 'cloud'); cld.alpha=0.6; cld.scale.set(0.7);
     game.add.tween(cld).to({x:1100}, 65000, null, true, 0, 0, false).onComplete.add(cloudLoop, this);
     this.background.add( cld );
 
@@ -156,14 +186,14 @@ var playState = {
     this.static = game.add.group(); /* things fixed to the screen, like buttons, excluded from zoom */
 
     /************ Bullets *****************/
-    this.bullets = new Bullets( this.land, this.zoomable);
+    this.bullets = new Bullets( this.land, this.zoomable );
     this.trace = new Trace( this.zoomable );
 
     /******* Player ********************/
-    this.player = new Player(430, 616, this.zoomable);
+    this.player = new Player(level.player.x, level.player.y, this.zoomable);
     //this.player.tank.events.onKilled.add(this.playerKilled, this);
 
-    this.enemy = new Enemy(this.bullets, this.land, this.zoomable);
+    this.enemy = new Enemy(level.enemy[0].x, level.enemy[0].y, this.bullets, this.land, this.zoomable);
     //this.enemy.tank.events.onKilled.add(this.enemyKilled, this);
 
     /*** Fire animation Controller ***/
@@ -191,16 +221,22 @@ var playState = {
     this.fullScreenButton = game.add.button(0,0, 'fullscreenbutton', fullScreenButtonPress, this,0,0,0);
     this.screenFix.add(this.fullScreenButton, 10, 10, 1.0);
 
+    /* My custom camera controller with Zooming */
+    this.myCam = new MyCam( this );
     if (gameMode==TITLE_SCREEN) {
       titlePage = game.add.button(game.width/2,game.height/2, 'titlepage', titlePageStartPress, this,0,0,0);
       titlePage.anchor.set(0.5,0.5);
       this.screenFix.add(titlePage, game.width/2, game.height/2, 1.0);
 
       /****** My Camera *****************/
-      createMyCam(this, /*start coords*/430,-100, /* starting scale*/1.5);
+      //createMyCam(this, /*start coords*/430,-100, /* starting scale*/1.5);
+      this.myCam.setTarget( {x:430, y:-100} );
+      this.myCam.setPosition( /*start coords*/430,-100, /* starting scale*/1.5)
 
     }else if (gameMode==GAME) {
-      createMyCam(this, this.player.tank.x, this.player.tank.y, 1.0);
+      //createMyCam(this, this.player.tank.x, this.player.tank.y, 1.0);
+      this.myCam.setTarget( this.player.tank );
+      this.myCam.setPosition( /*start coords*/430,420, /* starting scale*/1.0)
       this.startPlay();
     }
 
@@ -229,12 +265,12 @@ var playState = {
     this.land.updateLand();
 
     /********** Bullets ***************************************/
-    this.bullets.updateBullets();
+    this.bullets.updateBullets(this.myCam);
 
     this.trace.updateTrace(this.player, this.land);
 
     /********** My Camera **************************************/
-    updateMyCam(this);
+    this.myCam.update();
 
 
     /********** Joystick ***************************************/
@@ -267,9 +303,9 @@ var playState = {
         tank.body.velocity.y = tank.speed; }
     // zoom
     if (game.input.keyboard.isDown(Phaser.Keyboard.Q)) {
-        worldScale += 0.01; }
+        this.myCam.worldScale += 0.015; }
     else if (game.input.keyboard.isDown(Phaser.Keyboard.A)) {
-        worldScale -= 0.01;
+        this.myCam.worldScale -= 0.015;
     }
 
     /************ Player **************************************/
@@ -284,10 +320,12 @@ var playState = {
   render: function()
   {
       game.debug.text(game.time.fps+"fps "
-                      +"scrn "+game.scale.width.toFixed(1)+","+game.scale.height.toFixed(1)+""
+                      +"scrn "+game.scale.width.toFixed(0)+","+game.scale.height.toFixed(0)+""
                       +"cam "+game.camera.x+","+game.camera.y+" "
                       +"myCam "+this.zoomable.pivot.x.toFixed(0)+","+this.zoomable.pivot.y.toFixed(0)+" "
-                      +"scale "+worldScale.toFixed(2)+" "
+                      +"scale "+this.myCam.worldScale.toFixed(2)+" "
+
+                      +"scaleMode "+this.myCam.scaleMode+ " "
                       +"player "+this.player.tank.x.toFixed(0)+","+this.player.tank.y.toFixed(0)
                       +" gun "+this.player.gun.angle.toFixed(1)+"a "+this.player.gun.power.toFixed(1)+"p"
                       || '--', 2, 14, "#00ff00");
@@ -340,13 +378,13 @@ var playState = {
   createJoystick: function() {
     this.joystick=new Joystick(this.player);
     this.screenFix.add( this.joystick, this.joystick.center.x, -this.joystick.center.y, 1.0 );
-  },
-  playerKilled: function( player ) {
-    this.finishPlay(LOOSE);
-  },
-  enemyKilled: function( enemy ) {
-    this.finishPlay(WIN);
   }
+//  playerKilled: function( player ) {
+//    this.finishPlay(LOOSE);
+//  },
+//  enemyKilled: function( enemy ) {
+//    this.finishPlay(WIN);
+//  }
 };
 
 /********************** TITLE PAGES & WIN PAGE ****************************************/
@@ -407,14 +445,14 @@ function titlePageStartPress() {
                            }, this);
 
   /* Cause the camera to tween down from the sky to the tank */
-  camTarget.setTo(this.player.tank.x, this.player.tank.y);
+  myGame.myCam.setTarget( this.player.tank );
   //this.startPlay();
 
 }
 
 /************************ SCREEN FIX CLASS ********************************************/
 /**************************************************************************************/
-var ScreenFix = function ( staticGroup ) {
+var ScreenFix = function ( staticGroup) {
   this.item = [];
   this.staticGroup = staticGroup;
 }
@@ -424,7 +462,7 @@ ScreenFix.prototype.update = function() {
     var x=itm.screenFix.x, y=itm.screenFix.y;
     if (x < 0) x = game.width + itm.screenFix.x;
     if (y < 0) y = game.height + itm.screenFix.y;
-    var p = screenToWorld( { x: x, y: y } );
+    var p = myGame.myCam.screenToWorld( { x: x, y: y } );
     //itm.x = p.x;  itm.y = p.y;
     //itm.scale.set(screenToWorldScale(itm.screenFix.scale));
     itm.x=x; itm.y=y;
@@ -488,7 +526,7 @@ function pointerOnDown(p) {
   if (this.joystick) this.joystick.onPointerDown( p );
 
   if (drawMode==true){ /* the drawing a base on the screen mode is on */
-    var w=screenToWorld(p);
+    var w=this.myCam.screenToWorld(p);
     drawing.lastPos=w;
     drawing.pointerId = p.id;
     this.land.drawStartDefence(w.x, w.y, '#B020D0', DRAWING);
@@ -500,7 +538,7 @@ function pointerOnMove(p) {
   if (this.joystick) this.joystick.onPointerMove( p );
 
   if (p.id == drawing.pointerId) {
-    var w=screenToWorld(p);
+    var w=this.myCam.screenToWorld(p);
     if (drawing.lastPos!=null){
       if (w.distance( drawing.lastPos ) > 10) {
         this.land.drawDefence(drawing.lastPos.x, drawing.lastPos.y,
@@ -515,7 +553,7 @@ function pointerOnMove(p) {
 
 }
 function pointerOnUp(p) {
-  var w=screenToWorld(p);
+  var w=this.myCam.screenToWorld(p);
   //console.log("up "+p.x+","+p.y+" myWorld "+w.x.toFixed(0)+","+w.y.toFixed(0));
   if (this.joystick){ if (p.id == this.joystick.pointerId) {
     this.joystick.pointerId = null;

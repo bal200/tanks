@@ -3,7 +3,7 @@
 
 /***** Bullets **********/
 
-var Bullets = function ( land, group ) {
+var Bullets = function ( land, group, myCam ) {
   Phaser.Group.call(this, game); /* create a Group, the parent Class */
 
   this.enableBody = true;
@@ -12,6 +12,7 @@ var Bullets = function ( land, group ) {
 
   this.bulletTime=0;
   this.land = land;
+  this.myCam = myCam;
   this.z = 40;
   for (var i = 0; i < 50; i++)
   {
@@ -42,12 +43,12 @@ var Bullets = function ( land, group ) {
 inheritPrototype(Bullets, Phaser.Group);
 
 
-Bullets.prototype.updateBullets = function() {
+Bullets.prototype.updateBullets = function(myCam) {
   //var player = th.player;
 
   /********** Bullets ***************************************/
   /* check if any of the bullets have hit the destructable landscape */
-  this.checkBulletsToLand();
+  this.checkBulletsToLand(myCam);
   /* set the bullets angles to their direction of travel */
   this.forEachExists(function(bullet) {
     bullet.angle = Phaser.Math.radToDeg(
@@ -91,20 +92,19 @@ function fire() {
 
 /* check through the group of bullets to see if any have hit our foreground land,
  *  using the bitmap getPixel command to look for solid ground */
-Bullets.prototype.checkBulletsToLand = function () {
-//function checkBulletsToLand(bullets, bitmap) {
-  var over=1;
+Bullets.prototype.checkBulletsToLand = function (myCam) {
+  var over=0;
   var land = this.land;
   this.forEachExists(function(bullet) {
     var x = Math.floor(bullet.x);
     var y = Math.floor(bullet.y);
     /* screen zoom out trigger */
     if (bullet.whos==1) {
-      var o=checkBulletForCameraMove(x,y);
+      var o=myCam.checkBulletForCameraMove(x,y);
       if (o>over) over=o; /* find the furthest bullets x coord */
     }
       if (land.checkBitmapForHit(x,y, bullet.whos) > 0) {
-        this.explode(bullet, land);
+        this.explode(bullet);
         /* Erase a Circle in the land to make a crater */
         land.drawCrater(bullet.lastX, bullet.lastY, 16, /*exclude*/LAND);
         game.camera.shake(0.0010, 100); /* shake the screen a bit! */
@@ -113,11 +113,11 @@ Bullets.prototype.checkBulletsToLand = function () {
     bullet.lastY = y;
   }, this);
   /* If bullets are far over the page, we may need to zoom out a bit to see all action */
-  changeScaleMode(over);
+  myCam.changeScaleMode(over);
 };
 
 /* handles a bullet exploding, create its explosion graphic, and sound effect */
-Bullets.prototype.explode = function ( bullet, land ) {
+Bullets.prototype.explode = function ( bullet) {
   if (exp=this.explosions.getFirstExists(false)) {
     exp.reset(Math.floor(bullet.x), Math.floor(bullet.y));
     exp.play('boom', /*framerate*/30, /*loop*/false, /*killoncomplete*/true);
@@ -132,7 +132,7 @@ function tankToBulletsHandler(tank, bullet) {
     tank.damage(40);
     game.camera.shake(0.0020, 250); /* shake the screen a bit! */
   //}
-  this.bullets.explode(bullet, null);
+  this.bullets.explode(bullet);
 }
 
 
@@ -203,10 +203,11 @@ Trace.prototype.updateTrace = function(player, land) {
       }
     }
     /* jump to different zoom points, depending on where the trace marks are pointing */
-    var newScale=1;
-    if (p.x > 800) newScale=2;
-    if (p.x > 1600 && p.y<970) newScale=3;
-    changeScaleMode(newScale);
+    var new_scale=myGame.myCam.checkBulletForCameraMove(p.x,p.y);
+    //var newScale=1;
+    //if (p.x > 800) newScale=2;
+    //if (p.x > 1600 && p.y<970) newScale=3;
+    myGame.myCam.changeScaleMode(new_scale);
   }
 };
 

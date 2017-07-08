@@ -8,7 +8,8 @@ var firebutton; /* space bar */
 var Player = function(x,y, grp) {
     Phaser.Group.call(this, game); /* create a Group, the parent Class */
 
-    this.tank = game.add.sprite(x,y,'tank2_right');
+    this.tank = game.add.sprite(x,y,'tanks');
+    this.tank.frame = 0;
     this.tank.anchor.set(0.5, 0.5);
     this.tank.speed = 200;
     this.add( this.tank );
@@ -21,17 +22,12 @@ var Player = function(x,y, grp) {
     //this.tank.body.bounce.setTo(0.5, 0.5);
     this.tank.body.mass=20;
     //this.tank.body.setSize(54,40, 10,5);
-    this.tank.scale.set(0.5);
+    this.tank.scale.set(0.79);
 
     grp.add(this); /* add the tank to the zoomable group */
     this.tank.onPlatform=false; /* used by my land-roving code */
     this.tank.health=100;
-    this.tank.events.onKilled.add(function(tank){
-      myGame.fire.setFire(tank.x, tank.y+10, 0.50);
-      /* TODO: change sprite to charred remains frame */
-      tank.exists=true; tank.visible=true; /* although its Killed, we need the charred remains to stay */
-      myGame.finishPlay( LOOSE );
-    } ,this);
+    this.tank.events.onKilled.add( this.onKilled ,this);
 
     /************ Gun *****************/
     this.gun = {
@@ -44,6 +40,14 @@ inheritPrototype(Player, Phaser.Group);
 
 Player.prototype.updatePlayer = function( land ) {
   /* nothing needed here yet */
+};
+
+/* callback. burst your tank into flames, and trigger end game */
+Player.prototype.onKilled = function(tank){
+  myGame.fire.setFire(tank.x, tank.y+10, 0.80);
+  tank.frame = 1; /* burnt out */
+  tank.exists=true; tank.visible=true; /* although its Killed, we need the charred remains to stay */
+  myGame.finishPlay( LOOSE );
 };
 
 function collisionTankToLand( tank, land ) {
@@ -63,10 +67,10 @@ function collisionTankToLand( tank, land ) {
 }
 
 /******* Enemy Tank ********************/
-var Enemy = function( bullets, land, group ) {
+var Enemy = function( x,y, bullets, land, group ) {
   Phaser.Group.call(this, game); /* create a Group, the parent Class */
-  t = this.tank = game.add.sprite(1400,607,'tank_left');
-  this.tank.anchor.set(0.5, 0.5);
+  t = this.tank = game.add.sprite(x,y,'tank_left');
+  this.tank.anchor.set(0.5, 0.65);
   this.tank.speed = 200;
   this.tank.enableBody = true;
   this.tank.physicsBodyType = Phaser.Physics.ARCADE;
@@ -77,16 +81,11 @@ var Enemy = function( bullets, land, group ) {
   this.tank.onPlatform=false;
   this.tank.health=100;
   this.tank.events.onKilled.add(function(tank){
-    myGame.fire.setFire(tank.x, tank.y+10, 0.50);
+    myGame.fire.setFire(tank.x, tank.y+3, 0.85);
     /* TODO: change sprite to charred remains frame */
     tank.exists=true; tank.visible=true; /* although its Killed, we need the charred remains to stay */
     /* TODO: check the array of tanks for more alive */
     myGame.finishPlay( WIN );
-  } ,this);
-
-  this.tank.events.onKilled.add(function(tank){
-    myGame.fire.setFire(tank.x, tank.y+10, 0.50);
-
   } ,this);
 
   this.add( this.tank );
