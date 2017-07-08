@@ -1,6 +1,6 @@
-var MODE_1 =1;
-var MODE_2 =2;
-var MODE_3 =3;
+var MODE_1 =0;
+var MODE_2 =1;
+var MODE_3 =2;
 
 /***** My Camera initialisation **********/
 var MyCam = function( myGame ) {
@@ -14,7 +14,7 @@ var MyCam = function( myGame ) {
   this.camTarget = new Phaser.Point(0,0); /* where the cam shold be now.  it will Lerp towards this slowly */
   this.camVelocity = new Phaser.Point(0,0); /* speed the cameraMidPos is moving towards cam Target */
 
-  this.scaleMode=MODE_1; /* the camera jumps between 3 scales */
+  this.scaleMode= 0; /* the camera jumps between 3 preset scales */
   this.screenBottomTarget=0;
   this.scaleModeTimeout=null;
   this.scaleModeChangeWaiting=0;
@@ -24,7 +24,7 @@ var MyCam = function( myGame ) {
     setWorldScale();
   });
   //this.game.camera.reset();
-  this.setWorldScale( MODE_1 );
+  this.setWorldScale( 0 );
   game.camera.bounds = null; /* Stop the Phaser builtin camera from messing with our zoom code */
 
 };
@@ -161,12 +161,13 @@ Parallax.prototype.myUpdate=function(pivot, screenScale, worldScale) {
 
 
 MyCam.prototype.changeScaleMode = function(n) {
+  //console.log("changeScaleMode "+n);
   if (this.scaleMode == n) return; /* already at the right scale, do nothing */
   var last = this.scaleMode;
   if (n > last) {  /* we're increasing the screen size, do straight away */
     this.setWorldScale(n);
   }else{ /* we're reducing the screen size */
-    if (this.scaleModeTimeout!=null) { /* already a timeout waiting, update it */
+    if (this.scaleModeTimeout!==null) { /* already a timeout waiting, update it */
       this.scaleModeChangeWaiting = n;
     }else{ /* no existing timeout, so make one */
       this.scaleModeChangeWaiting = n;
@@ -179,22 +180,32 @@ MyCam.prototype.changeScaleMode = function(n) {
 };
 
 MyCam.prototype.checkBulletForCameraMove =function(x,y) {
-  if (x > 600) { return(MODE_2); }
-  if (x > 1400) { return(MODE_3); }
-  return MODE_1;
+  var new_mode=0;
+  for (n=0; n<level.scaleModes.length; n++){
+    if (x > level.scaleModes[n].trigger) new_mode=n;
+  }
+  //console.log("checkBulletForCameraMove "+new_mode);
+  return new_mode;
+  //if (x > 1400) { return(MODE_3); }
+  //if (x > 600) { return(MODE_2); }
+  //return MODE_1;
 };
 
 MyCam.prototype.setWorldScale =function( new_mode ) {
+  //console.log("setWorldScale "+new_mode);
   if (gameMode==WIN || gameMode==LOOSE) return; /* dont let the scale jump around when on title screens */
-  if (new_mode != null)  this.scaleMode = new_mode;
+  if (new_mode !== null)  this.scaleMode = new_mode;
   var a=game.width / 900 ;
 
-  if (this.scaleMode==MODE_1){this.worldScaleTarget=1.0*a; /* zoomed in on base */
-                              this.screenBottomTarget=730; }
-  if (this.scaleMode==MODE_2){this.worldScaleTarget=0.59*a; /* zoomed out for firing */
-                              this.screenBottomTarget=960; }
-  if (this.scaleMode==MODE_3){this.worldScaleTarget=0.49*a; /* extended zoom out - for distance firing */
-                              this.screenBottomTarget=960; }
+  var mode = level.scaleModes[new_mode];
+  this.worldScaleTarget = mode.scale*a; /* the new scale is based on the current mode, and the screen width */
+  this.screenBottomTarget = mode.screenBottom;
+  // if (this.scaleMode==MODE_1){this.worldScaleTarget=1.0*a; /* zoomed in on base */
+  //                             this.screenBottomTarget=730; }
+  // if (this.scaleMode==MODE_2){this.worldScaleTarget=0.59*a; /* zoomed out for firing */
+  //                             this.screenBottomTarget=960; }
+  // if (this.scaleMode==MODE_3){this.worldScaleTarget=0.49*a; /* extended zoom out - for distance firing */
+  //                             this.screenBottomTarget=960; }
 };
 
 

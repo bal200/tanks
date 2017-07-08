@@ -17,7 +17,7 @@ var Land = function( myGame ) {
   this.tilemap = game.add.tilemap(level.tilemap /*'tilemap'*/);
   this.tilemap.addTilesetImage('jungletileset_32x32', 'jungletileset');
 
-  this.layer = this.tilemap.createLayer('Tile Layer 1',
+  this.layer = this.tilemap.createLayer(level.tilelayer,
                     this.tilemap.widthInPixels, this.tilemap.heightInPixels, myGame.zoomable);
   this.layer.fixedToCamera = false;
   this.layer.autoCull = false;

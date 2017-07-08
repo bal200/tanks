@@ -93,7 +93,7 @@ function fire() {
 /* check through the group of bullets to see if any have hit our foreground land,
  *  using the bitmap getPixel command to look for solid ground */
 Bullets.prototype.checkBulletsToLand = function (myCam) {
-  var over=1;
+  var over=0;
   var land = this.land;
   this.forEachExists(function(bullet) {
     var x = Math.floor(bullet.x);
@@ -203,10 +203,11 @@ Trace.prototype.updateTrace = function(player, land) {
       }
     }
     /* jump to different zoom points, depending on where the trace marks are pointing */
-    var newScale=1;
-    if (p.x > 800) newScale=2;
-    if (p.x > 1600 && p.y<970) newScale=3;
-    myGame.myCam.changeScaleMode(newScale);
+    var new_scale=myGame.myCam.checkBulletForCameraMove(p.x,p.y);
+    //var newScale=1;
+    //if (p.x > 800) newScale=2;
+    //if (p.x > 1600 && p.y<970) newScale=3;
+    myGame.myCam.changeScaleMode(new_scale);
   }
 };
 

@@ -18,7 +18,7 @@ var Fire = function( land, group ) {
   /* The flame sprites */
   this.createMultiple(10, 'fire');
   this.forEach(function(fire) {
-    fire.anchor.set(0.5, 1.0);
+    fire.anchor.set(0.5, 0.9);
     fire.animations.add('flicker', /*frames*/null, /*fps*/20, /*loop*/true);
     fire.firesController = this;
   });
@@ -39,10 +39,10 @@ Fire.prototype.setFire = function(x,y, size) {
     fire.scale.set(size);
     //this.smokePuff(x,y, 1);
     fire.smokeTimer = game.time.events.repeat(Phaser.Timer.SECOND * 0.8, 50, function(fire){
-      this.smokePuff(fire.x,fire.y, fire.scale.x);
+      this.smokePuff(fire.x, fire.y, fire.scale.x * 0.6);
       game.add.tween(fire.scale).to({x: fire.scale.x*0.95, y: fire.scale.y*0.95}, /*duration*/200,
                     Phaser.Easing.Linear.None , /*autostart*/true, /*delay*/0, /*repeat*/0, /*yoyo*/false);
-      if(fire.scale.x < 0.20) { /* too small, lets fizzle out */
+      if(fire.scale.x < 0.30) { /* too small, lets fizzle out */
         game.time.events.remove(fire.smokeTimer);
         fire.kill();
       }
@@ -56,7 +56,7 @@ Fire.prototype.setFire = function(x,y, size) {
 Fire.prototype.smokePuff = function(x,y, size) {
   var smoke = this.smokes.getFirstExists(false);
   if (smoke) {
-    smoke.reset(x,y -(size * 120));
+    smoke.reset(x,y -(size * 70));
     smoke.scale.set(size /*0.40*/);
     smoke.alpha=1.0;
     smoke.frame = Math.floor(game.rnd.between(1, 6));
