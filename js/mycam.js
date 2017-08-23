@@ -49,7 +49,7 @@ MyCam.prototype.update = function() {
 
     /**** Work out the Scale factor ***/
     var scaleDif = worldScaleTarget - worldScale;
-    if (count < 240) { /* TODO: do timing better */
+    if (this.myGame.count < 240) { /* TODO: do timing better */
       worldScale += scaleDif * (this.scaleLerp/3); /* very slow zoom out at start of game */
     }else{
       worldScale += scaleDif * this.scaleLerp;/* 0.05 Scale lerp */

@@ -102,10 +102,12 @@ Joystick.prototype.onPointerMove = function ( p ) {
 
 /* jiggle the joystick after firing to mimic kick-back */
 Joystick.prototype.drift = function () {
-  var angDrift = game.rnd.between(-1, +2);
-  if (angDrift==+2) angDrift=0;
-  this.barrel.angle += angDrift;
-  this.barrel.power += game.rnd.between(-1, +1);
+//  var angDrift = game.rnd.between(-1, +4);
+//  if (angDrift >= +2) angDrift=0;
+//  this.barrel.angle += angDrift;
+  var powerDrift = game.rnd.between(-1, +3);
+  if (powerDrift >= +2) powerDrift=0;
+  this.barrel.power += powerDrift;
 
   this.gun.angle = this.barrel.angle;
   this.gun.power = this.barrel.power;

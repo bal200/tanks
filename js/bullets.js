@@ -1,8 +1,10 @@
+/****** Bullets and Trace markers Classes ************/
 
-/****** Bullets and Trace markers ************/
+/**** The "Bullet" class controls a Group of bullets that are any of the in game weapoens.
+ **** Their characteristics are controlled by setting their "Type"
+ ****/
 
-/***** Bullets **********/
-
+var BAZOOKA=1, GRENADE=2;
 var Bullets = function ( land, group, myCam ) {
   Phaser.Group.call(this, game); /* create a Group, the parent Class */
 
@@ -16,20 +18,21 @@ var Bullets = function ( land, group, myCam ) {
   this.z = 40;
   for (var i = 0; i < 50; i++)
   {
-      var b = this.create(0, 0, 'bullet');
-      //b.name = 'bullet' + i;
+      var b = this.create(0, 0, 'bullets');
       //b.body.drag = {x:70.5, y:70.5};
       b.exists = false;  b.visible = false;
       b.checkWorldBounds = true;
       b.anchor.set(0.5, 0.5);
       b.lastX=0; b.lastY=0;
       b.whos=0; /* 1=Players, 2=Enemies */
+      b.type=BAZOOKA; /* bullet or grenade */
+      b.frame=1;
       b.events.onOutOfBounds.add(function(bullet) {
         bullet.kill();
       } /*, th*/ );
   }
 
-  /******* Explosions group ********/
+  /******* Small Explosions group ********/
   this.explosions = game.add.group();
   this.explosions.z = 45;
   this.explosions.createMultiple(10, 'boom');
@@ -51,43 +54,41 @@ Bullets.prototype.updateBullets = function(myCam) {
   this.checkBulletsToLand(myCam);
   /* set the bullets angles to their direction of travel */
   this.forEachExists(function(bullet) {
-    bullet.angle = Phaser.Math.radToDeg(
+    if (bullet.type==BAZOOKA)
+      bullet.angle = Phaser.Math.radToDeg(
                    Phaser.Math.angleBetween(0,0, bullet.body.deltaX(), bullet.body.deltaY()));
   }, this);
 
-  var bullets=this;
-  //game.physics.arcade.collide(this, this.land.layer, function(bullet, land) {
-    //alert("here! "+bullet.x+", "+bullet.y);
-  //  bullets.explode(bullet, land);
-  //  bullet.kill();
-  //});
-
 };
 
-/*  Player Shoots off a new bullet */
-function fire() {
-  var player = this.player;
-  var gun = this.player.gun;  /* just to shorten some variable names */
+function playerFireBazooka() { myGame.bullets.playerFire( BAZOOKA ); }
+function playerFireGrenade() { myGame.bullets.playerFire( GRENADE ); }
 
+/*  Player Shoots off a new bullet */
+Bullets.prototype.playerFire = function( type ) {
+  var player = myGame.player;
+  var gun = player.gun;  /* just to shorten some variable names */
+  if (type==undefined) type=BAZOOKA;
   drawOff(); /* turn off drawing mode now were shootin' */
-  if (this.joystick && this.joystick.pointerId==null)  this.trace.turnTraceOff(); /* get rid of the trace lines now too */
-  var bullet = this.bullets.getFirstExists(false);
+  if (myGame.joystick && myGame.joystick.pointerId==null)  myGame.trace.turnTraceOff(); /* get rid of the trace lines now too */
+  var bullet = this.getFirstExists(false);
   if (bullet) {
     var vec = angleToVector( gun.angle );
-
     bullet.reset(player.tank.x + (vec.x*50), player.tank.y + (vec.y*50));
     var power = (gun.power *9) +300; /* gun.power is 0-100 */
     bullet.body.velocity.x = vec.x * power;
     bullet.body.velocity.y = vec.y * power;
     bullet.whos = PLAYER;/* the player fired it */
+    bullet.type = type;
+    bullet.frame = type-1;
     audio1.play('gunshot'); /* gunshot noise */
     //bulletTime = game.time.now + 200;
-    if (this.joystick) {
-      this.joystick.drift();
-      this.joystick.updateJoypadBarrel();
+    if (myGame.joystick) {
+      myGame.joystick.drift();
+      myGame.joystick.updateJoypadBarrel();
     }
   }
-  this.learning.trigger( FIRE_BUTTON_PRESS );
+  myGame.learning.trigger( FIRE_BUTTON_PRESS );
 }
 
 /* check through the group of bullets to see if any have hit our foreground land,
@@ -103,17 +104,68 @@ Bullets.prototype.checkBulletsToLand = function (myCam) {
       var o=myCam.checkBulletForCameraMove(x,y);
       if (o>over) over=o; /* find the furthest bullets x coord */
     }
-      if (land.checkBitmapForHit(x,y, bullet.whos) > 0) {
-        this.explode(bullet);
-        /* Erase a Circle in the land to make a crater */
-        land.drawCrater(bullet.lastX, bullet.lastY, 16, /*exclude*/LAND);
-        game.camera.shake(0.0010, 100); /* shake the screen a bit! */
+    if (land.checkBitmapForHit(x,y, bullet.whos) > 0) { /* HIT */
+      var bitmap=land.getPixelWhichBitmap(x,y);
+      var p=this.correctHitPosition(bullet, land, /*crater depth*/0);
+      var pRaised=this.correctHitPosition(bullet, land, /*crater depth*/2);
+      bullet.x=p.x; bullet.y=p.y; /* raise it up above the ground a bit */
+/***************************************************************************************************/
+      if (bullet.type==BAZOOKA) { /* bullet, so blow up */
+        this.explodeBulletLand(bullet, land, pRaised, bitmap);
+
+      }else if (bullet.type==GRENADE) { /* bouncing grenade */
+        var surfaceNormal = land.getSurfaceNormal(p.x,p.y);
+        var bulletAngle = vectorToAngle( bullet.body.deltaX(), bullet.body.deltaY() );
+        //console.log("bullet angle "+bulletAngle );
+        //console.log("surfaceNormal "+surfaceNormal );
+        var bounce = bounceAngle( bulletAngle, surfaceNormal );
+        //console.log("newAngle "+bounce);
+        var pow = (new Phaser.Point(0,0)).distance(bullet.body.velocity);
+        pow *= 0.60; /* Bouncyness: 95=rubber ball, 5-10=wet fish */
+        //console.log("pow "+pow);
+        if (pow < 40)  this.explodeBulletLand(bullet, land, pRaised, bitmap);
+        bullet.body.reset(pRaised.x,pRaised.y);
+        bullet.body.velocity = newVector(pow, /*angle*/bounce);
+        //console.log("new velocity: "+bullet.body.velocity.x +","+ bullet.body.velocity.y)
       }
+    }
     bullet.lastX = x;
     bullet.lastY = y;
   }, this);
   /* If bullets are far over the page, we may need to zoom out a bit to see all action */
   myCam.changeScaleMode(over);
+};
+
+Bullets.prototype.explodeBulletLand = function(bullet, land, p, bitmap) {
+
+  this.explode(bullet); /* small explosion graphic */
+  /* Erase a Circle in the land to make a crater */
+  land.drawCrater(p.x, p.y, 16, /*exclude*/LAND);
+  /* let the sparks fly! */
+  if (bitmap.type == LAND) {
+    myGame.particles.createFlurry (p.x, p.y, 1, bullet.body/*used for direction angle*/);
+  }else{
+    myGame.particles.createFlurry (p.x, p.y, 4, bullet.body/*used for direction angle*/);
+  }
+  game.camera.shake(0.0010, 100); /* shake the screen a bit! */
+};
+/** The bullets can go too deep when the colision is detected.  This can make uneven holes.
+ ** correctHitPosition() will pull the bullets x,y back to the lands surface, so the explosion
+ ** circle is correct.
+ **/
+Bullets.prototype.correctHitPosition = function(bullet, land, depth) {
+  /* get the direction angle the bullet is going in */
+  var vec=new Phaser.Point(bullet.body.deltaX(), bullet.body.deltaY());
+  vec.normalize();
+  vec.rotate(0,0, 180,true); /* then point it backwards */
+  /* step backwards from the collision detected point, until you hit air */
+  var p = new Phaser.Point(bullet.x, bullet.y);
+  do{
+    p.x += vec.x;  p.y += vec.y;
+  }while( land.checkBitmapForHit(Math.floor(p.x), Math.floor(p.y), bullet.whos) > 0 );
+  /* move back a few more pixels to lessen the crater depth */
+  for (n=0; n<depth; n++) { p.x += vec.x;  p.y += vec.y; }
+  return p;
 };
 
 /* handles a bullet exploding, create its explosion graphic, and sound effect */
@@ -187,8 +239,8 @@ Trace.prototype.updateTrace = function(player, land) {
       }else{
         t.reset(p.x, p.y); /* place the next dot on the line */
         //t.bringToTop();
-        t.angle = Phaser.Math.radToDeg(
-                    Phaser.Math.angleBetween(0,0, deltaX, deltaY));
+        //t.angle = vectorToAngle(deltaX, deltaY);
+        t.angle=Phaser.Math.radToDeg(  Phaser.Math.angleBetween(0,0, deltaX, deltaY) );
         last.x=p.x; last.y=p.y;
         do{ /* an inner loop, to slowly step along the line until we advance 20 pixels, ready for next dot */
           deltaY += (game.physics.arcade.gravity.y / 100)/100;
@@ -221,9 +273,29 @@ Trace.prototype.turnTraceOff = function() {
   this.traceOn=false;
 };
 
+function newVector( power, angle ){
+  var vec = new Phaser.Point(0,-1 * power);
+  vec = vec.rotate(0,0, angle, true);
+  return vec;
+}
+/* bounce an angle off a surface like a rubber ball would */
+function bounceAngle ( angle, surfaceNormal ) {
+  angle += 180; if (angle>360) angle-=360; /* rotate it first */
+  var bounce = surfaceNormal + (surfaceNormal - angle);
+  if (bounce>=360) bounce-=360;
+  if (bounce<0) bounce += 360;
+  return bounce;
+}
 /* convert an angle (degrees) into a vector.  Assumes 0 degrees is pointing up */
 function angleToVector( angle ) {
   var vec = new Phaser.Point(0,-1);
   vec = vec.rotate(0,0, angle, true);
   return vec;
+}
+/* convert a Vector to an Angle (degrees). the vector doesnt have to be normalised */
+function vectorToAngle( x,y ) {
+  ang = (Phaser.Math.radToDeg(
+            Phaser.Math.angleBetween(0,0, x,y /*vec.x, vec.y*/) )) + 90;
+  if (ang<0) ang+=360;
+  return ang;
 }

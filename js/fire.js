@@ -52,7 +52,7 @@ Fire.prototype.setFire = function(x,y, size) {
   myGame.explosions.explode(x,y, /*scale*/2.1);
 
 };
-
+/* create a single puff of smoke, using our smoke sprite pool */
 Fire.prototype.smokePuff = function(x,y, size) {
   var smoke = this.smokes.getFirstExists(false);
   if (smoke) {
@@ -103,4 +103,53 @@ Explosions.prototype.explode = function ( x,y, size ) {
 
   /* Some sparks? */
 
+};
+
+/**************** PARTICLES *************************************************/
+/****************************************************************************/
+var Particles = function( land, group ) {
+  Phaser.Group.call(this, game); /* create a Group, the parent Class */
+  this.land = land;
+
+  this.enableBody = true;
+  this.physicsBodyType = Phaser.Physics.ARCADE;
+  group.add( this );
+
+  /* The particle sprites */
+  this.createMultiple(25, 'bullets');
+  this.forEach(function(part) {
+    part.anchor.set(0.5, 0.5);
+    part.frame = 3;
+    part.body.gravity = new Phaser.Point(0,100);
+    part.partController = this;
+    part.events.onOutOfBounds.add( function(part){part.kill();} );
+  });
+
+
+};
+inheritPrototype(Particles, Phaser.Group);
+
+
+Particles.prototype.createFlurry = function ( x,y, count, objectBody ) {
+  for (n=0; n<count; n++) {
+    if (part=this.getFirstExists(false)) {
+      var vec=new Phaser.Point(objectBody.deltaX(), objectBody.deltaY());
+      vec.normalize();
+      vec.rotate(0,0, 180+game.rnd.between(-45, 45) ,true); /* point the direction backwards & randomise */
+      part.reset(Math.floor(x), Math.floor(y));
+      part.alpha=1.0;
+      part.body.gravity = new Phaser.Point(0,100); /* TODO: fix the gravity on the particles */
+      var power = game.rnd.between(10, 400); /* 10, 400*/
+      part.body.velocity.x = vec.x * power;
+      part.body.velocity.y = vec.y * power;
+
+      part.scale.set(game.rnd.between( 2, 10 )*0.1);
+      var lifetime = game.rnd.between(1, 600); /*millseconds*/
+      game.add.tween(part).to({alpha: 0.0}, /*duration*/150,
+              Phaser.Easing.Linear.None , /*autostart*/true, /*delay*/lifetime, /*repeat*/0, /*yoyo*/false)
+              .onComplete.add(function(part, tween){
+                part.kill();
+              });
+    }
+  }
 };

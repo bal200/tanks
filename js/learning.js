@@ -66,7 +66,7 @@ Learning.prototype.trigger = function( trigger ) {
       this.stage = OH_NO_SHOOTING;
       /* Enemy fires a single shot */
       game.time.events.add(Phaser.Timer.SECOND * 4, function(){
-        this.myGame.enemy.enemyFire( game.rnd.between(-40,-60), game.rnd.between(780, 875) );
+        this.myGame.enemys.fireShot( game.rnd.between(-40,-60), game.rnd.between(780, 875) );
       });
       /* wait for enemy shot to land */
       game.time.events.add(Phaser.Timer.SECOND * 6, function(){
@@ -77,7 +77,7 @@ Learning.prototype.trigger = function( trigger ) {
         createFireButton(myGame);
         if (!this.myGame.joystick) this.myGame.createJoystick();
         this.myGame.joystick.alpha = 0.0; /* hide it for now */
-        if (myGame.enemy) myGame.enemy.startEnemyLogic();
+        if (this.myGame.enemys) this.myGame.enemys.startLogic();
 
       }, this);
     }
@@ -151,7 +151,7 @@ Learning.prototype.showGraphic = function( stage ) {
     //  }
     }
   if (stage==FIND_DRAW_BUTTON) text = "Tap the pencil button to draw";
-  if (stage==DRAW_A_HOUSE) text = '"Draw a house on your tank"';
+  if (stage==DRAW_A_HOUSE) text = '"Draw a house over your tank"';
   if (stage==OH_NO_SHOOTING) text = "Oh no! We're being shot at";
   if (stage==SHOOT_BACK) text = "Tap the Fire button to shoot your tanks cannon";
   if (stage==FIND_JOYSTICK) text = "Use this lever to angle your cannon";
