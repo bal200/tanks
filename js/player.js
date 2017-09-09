@@ -35,16 +35,18 @@ var Player = function(x,y, grp) {
 };
 inheritPrototype(Player, Phaser.Group);
 
-Player.prototype.updatePlayer = function( land ) {
-  /* nothing needed here yet */
-};
-
 /* callback. burst your tank into flames, and trigger end game */
 Player.prototype.onKilled = function(tank){
-  myGame.fire.setFire(tank.x, tank.y+10, 0.80);
+  myGame.fire.setFire(0,10, 0.80, tank);
+  myGame.particles.createFlurry(tank.x, tank.y, 10);
   tank.frame = 1; /* burnt out */
   tank.exists=true; tank.visible=true; /* although its Killed, we need the charred remains to stay */
+  myGame.audio.play('explosion3');
   myGame.finishPlay( LOOSE );
+};
+
+Player.prototype.updatePlayer = function( land ) {
+  /* nothing needed here yet */
 };
 
 /* handle my land roving algorithm.  tank can be th player, or an enemy tank */

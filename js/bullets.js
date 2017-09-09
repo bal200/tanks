@@ -81,7 +81,8 @@ Bullets.prototype.playerFire = function( type ) {
     bullet.whos = PLAYER;/* the player fired it */
     bullet.type = type;
     bullet.frame = type-1;
-    audio1.play('gunshot'); /* gunshot noise */
+    //audio1.play('gunshot'); /* gunshot noise */
+    myGame.audio.play('explosion5');
     //bulletTime = game.time.now + 200;
     if (myGame.joystick) {
       myGame.joystick.drift();
@@ -109,7 +110,7 @@ Bullets.prototype.checkBulletsToLand = function (myCam) {
       var p=this.correctHitPosition(bullet, land, /*crater depth*/0);
       var pRaised=this.correctHitPosition(bullet, land, /*crater depth*/2);
       bullet.x=p.x; bullet.y=p.y; /* raise it up above the ground a bit */
-/***************************************************************************************************/
+
       if (bullet.type==BAZOOKA) { /* bullet, so blow up */
         this.explodeBulletLand(bullet, land, pRaised, bitmap);
 
@@ -121,7 +122,7 @@ Bullets.prototype.checkBulletsToLand = function (myCam) {
         var bounce = bounceAngle( bulletAngle, surfaceNormal );
         //console.log("newAngle "+bounce);
         var pow = (new Phaser.Point(0,0)).distance(bullet.body.velocity);
-        pow *= 0.60; /* Bouncyness: 95=rubber ball, 5-10=wet fish */
+        pow *= 0.60; /* Bouncyness: .95=rubber ball, .5-.10=wet fish */
         //console.log("pow "+pow);
         if (pow < 40)  this.explodeBulletLand(bullet, land, pRaised, bitmap);
         bullet.body.reset(pRaised.x,pRaised.y);
@@ -136,19 +137,20 @@ Bullets.prototype.checkBulletsToLand = function (myCam) {
   myCam.changeScaleMode(over);
 };
 
+/* Execute the list of things that happen when a bullet hits land or defences */
 Bullets.prototype.explodeBulletLand = function(bullet, land, p, bitmap) {
-
   this.explode(bullet); /* small explosion graphic */
   /* Erase a Circle in the land to make a crater */
   land.drawCrater(p.x, p.y, 16, /*exclude*/LAND);
   /* let the sparks fly! */
   if (bitmap.type == LAND) {
     myGame.particles.createFlurry (p.x, p.y, 1, bullet.body/*used for direction angle*/);
-  }else{
+  }else{ /*Defences*/
     myGame.particles.createFlurry (p.x, p.y, 4, bullet.body/*used for direction angle*/);
   }
   game.camera.shake(0.0010, 100); /* shake the screen a bit! */
 };
+
 /** The bullets can go too deep when the colision is detected.  This can make uneven holes.
  ** correctHitPosition() will pull the bullets x,y back to the lands surface, so the explosion
  ** circle is correct.
@@ -173,7 +175,8 @@ Bullets.prototype.explode = function ( bullet) {
   if (exp=this.explosions.getFirstExists(false)) {
     exp.reset(Math.floor(bullet.x), Math.floor(bullet.y));
     exp.play('boom', /*framerate*/30, /*loop*/false, /*killoncomplete*/true);
-    audio1.play('boom'); /* boom noise */
+    //audio1.play('boom'); /* boom noise */
+    myGame.audio.play('explosion1');
   }
   bullet.kill();
 };
@@ -198,8 +201,8 @@ var Trace = function( group ) {
   group.add( this );
   for ( i = 0; i < 70; i++)
   {
-      var t = this.create(0, 0, 'trace');
-      t.name = 'trace' + i;
+      var t = this.create(0, 0, 'bullets');
+      t.frame = 2; /* trace image */
       t.exists = false;  t.visible = false;
       t.anchor.set(0.5, 0.5);
   }

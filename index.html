@@ -131,7 +131,7 @@ var loadState = {  /* 'load' state */
     game.load.image("tank2_right", "assets/tank2_fromVector2.png");
     //game.load.image("bullet", "assets/bullet.png");
     game.load.spritesheet("bullets", "assets/bullets.png",15,15);
-    game.load.image("trace", "assets/trace.png");
+    //game.load.image("trace", "assets/trace.png");
     game.load.spritesheet("tanks", "assets/tanks spritesheet88wh.png",88,88);
 
     game.load.spritesheet("boom", "assets/boom32wh12.png",32,32,12);
@@ -152,6 +152,7 @@ var loadState = {  /* 'load' state */
     /* Audio */
     game.load.audio('audio1', 'assets/audio/Wood Hits.wav');
     game.load.audio('audio2', 'assets/audio/Explosion.wav');
+    game.load.audio('explosions',"assets/audio/Explosions edited Combined.wav");
   },
   create: function() {
     game.state.start('play');
@@ -259,14 +260,21 @@ var playState = {
     }
 
 
-    audio1 = game.add.audio('audio1');
-    audio1.allowMultiple = true;
-	  audio1.addMarker('gunshot', 0.1, 0.20);
-    audio1.addMarker('boom', 1.95, 0.20);
-    audio2 = game.add.audio('audio2');
+    //audio1 = game.add.audio('audio1');
+    //audio1.allowMultiple = true;
+	  //audio1.addMarker('gunshot', 0.1, 0.20);
+    //audio1.addMarker('boom', 1.95, 0.20);
+    //audio2 = game.add.audio('audio2');
     //audio2.allowMultiple = true;
 	  //audio2.addMarker('boom', 2.0, 0.40);
     //audio1.play();
+    this.audio = game.add.audio('explosions');
+    this.audio.allowMultiple = true;
+    this.audio.addMarker('explosion1', 0.0, 0.70); /* short, quiet, explosion */
+    this.audio.addMarker('explosion2', 1.0, 2.0); /* long, quiet, explosion */
+    this.audio.addMarker('explosion3', 3.0, 1.40); /* long, sharp, bigger explosion */
+    this.audio.addMarker('explosion4', 5.0, 0.40); /* short, sharp, quiet, gunshot */
+    this.audio.addMarker('explosion5', 5.5, 0.40); /* gunshot, short, sharp, bit louder */
   },
 
   /**********  Update Function  ************************************************/
@@ -376,6 +384,9 @@ var playState = {
   },
 
   closeGame: function(newGameMode) {
+    if (level == null) { /* That was all the levels! just send them back to home screen */
+      level=levels[1]; newGameMode=TITLE_SCREEN;
+    }
     /* Close down the myGame object. to black screen */
     game.camera.fade(0x000000, 300);  /* fade to black */
     game.time.events.add(300, function() {

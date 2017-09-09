@@ -30,16 +30,18 @@ inheritPrototype(Fire, Phaser.Group);
 
 /* Create a new fire */
 /* Fire sizes range from 0.6 to 0.2.  10=large 1.0x scale.  1=small, 0.1x scale */
-Fire.prototype.setFire = function(x,y, size) {
+Fire.prototype.setFire = function(x,y, size, parent) {
   var fire = this.getFirstExists(false);
   if (fire) {
     fire.reset(x,y);
+    if (parent) parent.addChild(fire);
     fire.play('flicker');
     fire.mySize = size;
     fire.scale.set(size);
-    //this.smokePuff(x,y, 1);
+    fire.parent = parent;
     fire.smokeTimer = game.time.events.repeat(Phaser.Timer.SECOND * 0.8, 50, function(fire){
-      this.smokePuff(fire.x, fire.y, fire.scale.x * 0.6);
+      this.smokePuff(fire.parent.x+fire.x, fire.parent.y+fire.y, fire.scale.x * 0.6);
+      /* tween the fire slowly smaller */
       game.add.tween(fire.scale).to({x: fire.scale.x*0.95, y: fire.scale.y*0.95}, /*duration*/200,
                     Phaser.Easing.Linear.None , /*autostart*/true, /*delay*/0, /*repeat*/0, /*yoyo*/false);
       if(fire.scale.x < 0.30) { /* too small, lets fizzle out */
@@ -49,7 +51,7 @@ Fire.prototype.setFire = function(x,y, size) {
     }, this, fire);
 
   }
-  myGame.explosions.explode(x,y, /*scale*/2.1);
+  myGame.explosions.explode(parent.x,parent.y, /*scale*/2.1);
 
 };
 /* create a single puff of smoke, using our smoke sprite pool */
@@ -130,22 +132,32 @@ var Particles = function( land, group ) {
 inheritPrototype(Particles, Phaser.Group);
 
 
-Particles.prototype.createFlurry = function ( x,y, count, objectBody ) {
+Particles.prototype.createFlurry = function ( x,y, count, objBody ) {
+  var vec, power,scale,lifetime;
   for (n=0; n<count; n++) {
     if (part=this.getFirstExists(false)) {
-      var vec=new Phaser.Point(objectBody.deltaX(), objectBody.deltaY());
-      vec.normalize();
-      vec.rotate(0,0, 180+game.rnd.between(-45, 45) ,true); /* point the direction backwards & randomise */
       part.reset(Math.floor(x), Math.floor(y));
+      if (objBody) { /* blow away from the direction of travel */
+        power = game.rnd.between(10, 400); 
+        part.scale.set(game.rnd.between( 2, 10 )*0.1);
+        lifetime = game.rnd.between(1, 600); /*millseconds*/
+        vec=new Phaser.Point(objBody.deltaX(), objBody.deltaY());
+        vec.normalize();
+        vec.rotate(0,0, 180+game.rnd.between(-45, 45) ,true); /* point the direction backwards & randomise */
+        
+      }else{ /* blow in any direction */
+        power = game.rnd.between(300, 600); 
+        part.scale.set(game.rnd.between( 5, 14 )*0.1);
+        lifetime = game.rnd.between(300, 1000); /*millseconds*/
+        vec=new Phaser.Point(0, -1);
+        vec.rotate(0,0, game.rnd.between(-90, 90) ,true);
+      } 
+      
       part.alpha=1.0;
       part.body.gravity = new Phaser.Point(0,100); /* TODO: fix the gravity on the particles */
-      var power = game.rnd.between(10, 400); /* 10, 400*/
       part.body.velocity.x = vec.x * power;
       part.body.velocity.y = vec.y * power;
-
-      part.scale.set(game.rnd.between( 2, 10 )*0.1);
-      var lifetime = game.rnd.between(1, 600); /*millseconds*/
-      game.add.tween(part).to({alpha: 0.0}, /*duration*/150,
+      game.add.tween(part).to({alpha: 0.0}, /*duration*/250,
               Phaser.Easing.Linear.None , /*autostart*/true, /*delay*/lifetime, /*repeat*/0, /*yoyo*/false)
               .onComplete.add(function(part, tween){
                 part.kill();

@@ -31,7 +31,7 @@ var Land = function( myGame ) {
 var Bitmap = function( x1,y1, x2,y2, type) {
   this.x1 = x1; this.y1 = y1;
   this.x2 = x2; this.y2 = y2;
-  if (type) this.type = type; else this.type=DRAWING; /*drawing bitmap*/
+  if (type) this.type = type; else this.type=DRAWING; /* a user drawable bitmap*/
   this.width = x2 - x1; this.height = y2 - y1;
   this.bitmap = game.make.bitmapData(this.width, this.height);
   //this.bitmap.draw( this.layer );
@@ -72,28 +72,30 @@ Land.prototype.createBitmapForEnemyTank = function( tank ) {
   this.createBitmap(tank.x-300,tank.y-400, tank.x+400,tank.y+40, ENEMY_DRAWING);
 };
 
-/* check for a pixel hit on all the bitmaps.  returns 1 if a land/drawing pixel exists */
-Land.prototype.getPixel = function(x,y) {
-  for (n=0; n<this.bitmaps.length; ++n){
-    var b=this.bitmaps[n];
-    if (b) {
-      if (x>b.x1 && x<b.x2 && y>b.y1 && y<b.y2) {
-        var rgba = b.bitmap.getPixel( x-b.x1, y-b.y1 );
-        if (rgba.a >0) return 1;
-        /* else continue, as bitmaps can overlap, their maybe more */
-      }
-    }
-  }
-  return 0;
-};
-/* check for a pixel hit on the bitmaps BUT exclude a bitmap (eg players own defences) */
-Land.prototype.getPixelExclude = function(x,y, excludeType) {
+/* check for a pixel hit on the bitmaps.  returns 1 if a land/drawing pixel exists */
+/* set excludeType to a bitmap type to skip that bitmap (eg players own defences) */
+Land.prototype.getPixel = function(x,y, excludeType) {
+  if (excludeType==undefined) excludeType=0;
   for (n=0; n<this.bitmaps.length; ++n){
     var b=this.bitmaps[n];
     if (b && (b.type != excludeType)) {
       if (x>b.x1 && x<b.x2 && y>b.y1 && y<b.y2) {
         var rgba = b.bitmap.getPixel( x-b.x1, y-b.y1 );
         if (rgba.a >0) return 1;
+        /* else continue, as bitmaps can overlap, there maybe more */
+      }
+    }
+  }
+  return 0;
+};
+Land.prototype.getPixelCol = function(x,y) {
+  for (n=0; n<this.bitmaps.length; ++n){
+    var b=this.bitmaps[n];
+    if (b) {
+      if (x>b.x1 && x<b.x2 && y>b.y1 && y<b.y2) {
+        var rgba = b.bitmap.getPixel( x-b.x1, y-b.y1 );
+        if (rgba.a >0) return rgba;
+        /* else continue, as bitmaps can overlap, there maybe more */
       }
     }
   }
@@ -130,7 +132,7 @@ Land.prototype.checkBitmapForHit = function(x,y, who) {
   if (who==PLAYER) excludeType=DRAWING;
   if (who==ENEMY) excludeType=ENEMY_DRAWING;
 
-  if (this.getPixelExclude(x, y, excludeType)) {
+  if (this.getPixel(x, y, excludeType)) {
     return 1;
   }else
     return 0;
@@ -138,35 +140,36 @@ Land.prototype.checkBitmapForHit = function(x,y, who) {
 
 var RIGHT=1, BOTTOM=2, LEFT=3, TOP=4, UP=5, DOWN=6;
 Land.prototype.getSurfaceNormal = function(x,y) {
+  var SIZE=20; /* must be multiple of 2 */
   x=Math.floor(x); y=Math.floor(y);
   /* Build a grid of 1s and 0s. */
-  var grid = new Array(20); /* grid[y][x] */
-  for (j=0; j<20; j++) {   /* Y */
-    grid[j] = new Array(20);
-    for (i=0; i<20; i++) {   /* X */
-      grid[j][i] = this.getPixel(x +i-10, y +j-10);
+  var grid = new Array(SIZE); /* grid[y][x] */
+  for (j=0; j<SIZE; j++) {   /* Y */
+    grid[j] = new Array(SIZE);
+    for (i=0; i<SIZE; i++) {   /* X */
+      grid[j][i] = this.getPixel( x +i -(SIZE/2), y +j -(SIZE/2) );
     }
   }
   /* print it to the console */
-//  console.log("grid[][]: ");
-  for (j=0; j<20; j++) {
-    var str="";
-    for (i=0; i<20; i++) {
-      if (i==10&&j==10) str=str+"X";
-      else str = str + grid[j][i];
-    }
-//    console.log(""+j+"["+str+"]" );
-  }
+  // console.log("grid[][]: ");
+  // for (j=0; j<SIZE; j++) {
+  //   var str="";
+  //   for (i=0; i<SIZE; i++) {
+  //     if (i==(SIZE/2)&&j==(SIZE/2)) str=str+"X";
+  //     else str = str + grid[j][i]; }
+  //   console.log(""+j+"["+str+"]" );
+  // }
   /* Walk the vertexes and add up the surface normals */
   var total=0, count=0, cur, start;
-  cur=findFirstVertex(grid, {x:10, y:10, v:0,d:0} );
+  cur=findFirstVertex(grid, {x:(SIZE/2), y:(SIZE/2), v:0,d:0} );
+  if (!cur) return 0; /* error */
   start={x:cur.x, y:cur.y, v:cur.v,d:cur.d, a:cur.a}; /* quick object copy */  //findFirstVertex(grid, {x:10, y:10, v:0,d:0} );
   do{
 //    console.log(cur);
     total += cur.a;
     count++;
     cur = nextVertex(grid, cur);
-  }while(withinBounds(cur) && count<20);
+  }while(withinBounds(cur, SIZE) && count<20);
   /* now go the other way */
   cur=changeDirection(start);
   cur=nextVertex(grid, cur);
@@ -175,7 +178,7 @@ Land.prototype.getSurfaceNormal = function(x,y) {
     total += cur.a;
     count++;
     cur = nextVertex(grid, cur);
-  }while(withinBounds(cur) && count<40);
+  }while(withinBounds(cur, SIZE) && count<40);
 
 //console.log("total "+total+" count "+count);
   var ang=(total / count);
@@ -206,7 +209,7 @@ function findFirstVertex( grid, c) {
   }
 
   /* TODO: Improve this to do repeating circles until a vertex is found */
-  console.log("oooops");
+  console.log("getSurfaceNormal Error: Coords not near a surface!");
   return null; /*oops*/
 }
 function changeDirection( c ) {
@@ -216,8 +219,8 @@ function changeDirection( c ) {
   else if (c.d==DOWN) c.d=UP;
   return c;
 }
-function withinBounds( c ) {
-  if (c.x<0+1 || c.x>=20-1 || c.y<0+1 || c.y>=20-1) return false; else return true;
+function withinBounds( c, SIZE ) {
+  if (c.x<0+1 || c.x>=SIZE-1 || c.y<0+1 || c.y>=SIZE-1) return false; else return true;
 }
 /* Travel one place along the surface we're exploring */
 function nextVertex( grid, c ) {

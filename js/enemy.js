@@ -22,13 +22,14 @@ Enemys.prototype.startLogic = function() {
     this.arr[n].startEnemyLogic(); }
 };
 Enemys.prototype.stopLogic = function() {
-//  for (var n=0; n<this.arr.length; n++) {  //TURNED OFF***************************
-//    this.arr[n].stopEnemyLogic(); }
+  for (var n=0; n<this.arr.length; n++) {
+    this.arr[n].stopEnemyLogic(); }
 };
 
 /* used by the Learning routine to fire that first shot in training. */
 Enemys.prototype.fireShot = function(angle,power) {
   this.arr[0].enemyFire(angle,power);
+  myGame.audio.play('explosion2'); /* for the first shot of the game, use a bigger sound */
 };
 Enemys.prototype.collisionTankToLand = function(land) {
   for (var n=0; n<this.arr.length; n++) {
@@ -73,11 +74,12 @@ inheritPrototype(Enemy, Phaser.Group);
 
 /* onKilled callback */
 Enemy.prototype.enemyOnKilled = function(tank) {
-  console.log(this);
-  myGame.fire.setFire(tank.x, tank.y+3, 0.85);
+  myGame.fire.setFire(/*xy*/ 0,3, /*size*/ 0.85, /*Attach it to:*/ tank);
+  myGame.particles.createFlurry(tank.x, tank.y, 10);
   /* TODO: change sprite to charred remains frame */
   /* tank.alive will now be false */
   tank.exists=true; tank.visible=true; /* although its Killed, we need the charred remains to stay */
+  myGame.audio.play('explosion3');
   /* check the array of tanks for more alive */
   if (myGame.enemys.anyAlive() === false)
      myGame.finishPlay( WIN );
@@ -95,7 +97,8 @@ Enemy.prototype.enemyFire = function(angle, power) {
       bullet.body.velocity.y = vec.y * power;
       bullet.whos = ENEMY; /* Enemy fired it */
       bullet.type=BAZOOKA; bullet.frame=0;
-      audio1.play('gunshot', 0.6);
+      //audio1.play('gunshot', 0.6);
+      myGame.audio.play('explosion4');
     }
 };
 
