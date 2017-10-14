@@ -61,7 +61,7 @@ Player.prototype.updatePlayer = function() {
   this.updateTurret();
 };
 
-/* handle my land roving algorithm.  tank can be th player, or an enemy tank */
+/* handle my land roving algorithm.  tank can be the player, or an enemy tank */
 function collisionTankToLand( tank, land ) {
   var x=Math.floor(tank.x), y=Math.floor(tank.y);
   if ( land.getPixel( x, y+24 )==1 ) {

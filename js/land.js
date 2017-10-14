@@ -4,21 +4,22 @@
 var LAND = 1;
 var DRAWING = 2;
 var ENEMY_DRAWING = 3;
+var COSMETIC = 4;
 
-var Land = function( myGame ) {
-  //Phaser.Group.call(this, game); /* create a Group, the parent Class */
+var Land = function( myGame, data ) {
+  this.tilemaps=[];
+  for (var n=0; n<data.length; n++) {
+    this.tilemaps[n] = this.loadTilemap(data[n]);
+  }
+  //this.tilemap = game.add.tilemap(level.tilemap /*'tilemap'*/);
+  //this.tilemap.addTilesetImage('jungletileset_32x32', 'jungletileset');
+  //this.layer = this.tilemap.createLayer(level.tilelayer,
+  //                  this.tilemap.widthInPixels, this.tilemap.heightInPixels, myGame.zoomable);
+  //this.layer.fixedToCamera = false;
+  //this.layer.autoCull = false;
 
-  //this.bitmap = null;  /* the actual bitmap of destructable landscape */
-  //this.foreground=null; /* the large image to hold destructable landscape */
-  this.tilemap = game.add.tilemap(level.tilemap /*'tilemap'*/);
-  this.tilemap.addTilesetImage('jungletileset_32x32', 'jungletileset');
-
-  this.layer = this.tilemap.createLayer(level.tilelayer,
-                    this.tilemap.widthInPixels, this.tilemap.heightInPixels, myGame.zoomable);
-  this.layer.fixedToCamera = false;
-  this.layer.autoCull = false;
   // this.layer.debug = true;
-  this.tilemap.setCollisionBetween(1,884); /* set all the tiles as things to bump into */
+  //this.tilemap.setCollisionBetween(1,884); /* set all the tiles as things to bump into */
   //myGame.zoomable.add(this.layer);
 
   this.myGame = myGame;
@@ -41,7 +42,20 @@ var Bitmap = function( x1,y1, x2,y2, type) {
   else this.image.z = 20;
   //this.layer.destroy();
 };
-
+Land.prototype.loadTilemap = function(data) {
+  var tilemap = game.add.tilemap(data.tilemap /*'tilemap'*/);
+  tilemap.addTilesetImage('jungletileset_32x32', 'jungletileset');
+  var layer = tilemap.createLayer(data.tilelayer,
+                    tilemap.widthInPixels, tilemap.heightInPixels, myGame.zoomable);
+  layer.fixedToCamera = false;
+  layer.autoCull = false;
+  var myTilemap={
+    tilemap: tilemap,
+    layer: layer,
+    data: data
+  }
+  return myTilemap;
+}
 Land.prototype.tilemapToBitmap = function(tilemap, layer) {
   var bitmap = new Bitmap(0,0, tilemap.widthInPixels, tilemap.heightInPixels, LAND /*land type*/);
   bitmap.bitmap.draw( layer );
@@ -50,11 +64,16 @@ Land.prototype.tilemapToBitmap = function(tilemap, layer) {
 
   this.bitmaps.push(bitmap);
   this.myGame.zoomable.add(bitmap.image); /* add to group */
-  //if (this.myGame.joystick) game.world.bringToTop(this.myGame.joystick);
-  //game.world.bringToTop(this.myGame.button);
-  //game.world.bringToTop(drawButton);
-  //game.world.bringToTop(this.bitmaps[0].image);
 };
+Land.prototype.tilemapToBitmaps = function() {
+  for (var n=0; n<this.tilemaps.length; n++) {
+    var tilemap = this.tilemaps[n];
+    if (tilemap.data.type == LAND) {
+      this.tilemapToBitmap(tilemap.tilemap, tilemap.layer);
+    }
+  }
+}
+
 
 Land.prototype.createBitmap = function(x1,y1, x2,y2, type) {
   var bitmap = new Bitmap(x1,y1, x2,y2, type);
@@ -116,12 +135,11 @@ Land.prototype.getPixelWhichBitmap = function(x,y) {
 Land.prototype.updateLand = function() {
   /* now the tilemap has been rendered, copy it to a bitmap instead, so our destructable landscape works */
   if (this.myGame.count == 2) {
-    this.tilemapToBitmap(this.tilemap, this.layer);
-    //if (this.myGame.joystick) game.world.bringToTop(this.myGame.joystick);
+    this.tilemapToBitmaps();
     //game.world.bringToTop(this.myGame.button);
     //game.world.bringToTop(drawButton);
     //game.world.bringToTop(this.bitmaps[0].image);
-    this.myGame.zoomable.sort(); /* put everything back in order of their Z depth */
+    //this.myGame.zoomable.sort(); /* put everything back in order of their Z depth */
   }
 };
 

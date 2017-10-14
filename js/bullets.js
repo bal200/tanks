@@ -150,7 +150,7 @@ Bullets.prototype.explodeBulletLand = function(bullet, land, p, bitmap) {
   game.camera.shake(0.0010, 100); /* shake the screen a bit! */
 };
 
-/** The bullets can go too deep when the colision is detected.  This can make uneven holes.
+/** The bullets can go too deep when the collision is detected.  This can make uneven holes.
  ** correctHitPosition() will pull the bullets x,y back to the lands surface, so the explosion
  ** circle is correct.
  **/
@@ -180,6 +180,8 @@ Bullets.prototype.explode = function ( bullet) {
   bullet.kill();
 };
 
+/* called by by Phasers collide function. tank could be the player or an enemy tank
+   or even a game object like a door */
 function tankToBulletsHandler(tank, bullet) {
   /* Weve hit a tank ! */
   //if (tank.alive) {
