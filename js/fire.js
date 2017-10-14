@@ -103,8 +103,6 @@ Explosions.prototype.explode = function ( x,y, size ) {
   }
   myGame.fire.smokePuff(x,y, size);
 
-  /* Some sparks? */
-
 };
 
 /**************** PARTICLES *************************************************/

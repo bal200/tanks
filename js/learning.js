@@ -78,7 +78,8 @@ Learning.prototype.trigger = function( trigger ) {
         if (!this.myGame.joystick) this.myGame.createJoystick();
         this.myGame.joystick.alpha = 0.0; /* hide it for now */
         if (this.myGame.enemys) this.myGame.enemys.startLogic();
-
+        this.myGame.joystick.initialMoveUp(); /* demo the joystick moving upwards */
+        
       }, this);
     }
   }

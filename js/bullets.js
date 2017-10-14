@@ -74,14 +74,13 @@ Bullets.prototype.playerFire = function( type ) {
   var bullet = this.getFirstExists(false);
   if (bullet) {
     var vec = angleToVector( gun.angle );
-    bullet.reset(player.tank.x + (vec.x*50), player.tank.y + (vec.y*50));
+    bullet.reset(player.tank.x +(vec.x*50) -5, player.tank.y +(vec.y*50) -10);
     var power = (gun.power *9) +300; /* gun.power is 0-100 */
     bullet.body.velocity.x = vec.x * power;
     bullet.body.velocity.y = vec.y * power;
     bullet.whos = PLAYER;/* the player fired it */
     bullet.type = type;
     bullet.frame = type-1;
-    //audio1.play('gunshot'); /* gunshot noise */
     myGame.audio.play('explosion5');
     //bulletTime = game.time.now + 200;
     if (myGame.joystick) {
@@ -151,7 +150,7 @@ Bullets.prototype.explodeBulletLand = function(bullet, land, p, bitmap) {
   game.camera.shake(0.0010, 100); /* shake the screen a bit! */
 };
 
-/** The bullets can go too deep when the colision is detected.  This can make uneven holes.
+/** The bullets can go too deep when the collision is detected.  This can make uneven holes.
  ** correctHitPosition() will pull the bullets x,y back to the lands surface, so the explosion
  ** circle is correct.
  **/
@@ -181,6 +180,8 @@ Bullets.prototype.explode = function ( bullet) {
   bullet.kill();
 };
 
+/* called by by Phasers collide function. tank could be the player or an enemy tank
+   or even a game object like a door */
 function tankToBulletsHandler(tank, bullet) {
   /* Weve hit a tank ! */
   //if (tank.alive) {
@@ -221,7 +222,7 @@ Trace.prototype.updateTrace = function(player, land) {
           vec = vec.rotate(0,0, gun.angle, true);
 
                               /* end of gun barrel */
-    var p = new Phaser.Point(player.tank.x +(vec.x*50), player.tank.y +(vec.y*50));
+    var p = new Phaser.Point(player.tank.x +(vec.x*50)-5, player.tank.y +(vec.y*50)-10);
     var last = new Phaser.Point(p.x, p.y);
     var power = (gun.power *9) +300;
     var deltaX = (vec.x * power) / 100;

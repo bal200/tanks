@@ -19,6 +19,7 @@
         <script src="js/fire.js"></script>
         <script src="js/mycam.js"></script>
         <script src="js/learning.js"></script>
+        <script src="js/level_data.js"></script>
 
     <script type="text/javascript">
 
@@ -40,69 +41,11 @@ var TITLE_SCREEN=1, GAME=2, WIN=3, LOOSE=4; /* Game Modes */
 var gameMode = TITLE_SCREEN; /* 1=Title Screen,  2=Game,  3=Win, 4=Loose */
 var titlePage;
 
-/***** LEVEL DATA *************************************************************/
-var levels = [{},{  /* Settings for each level in the game */
-  level:1,
-  tilemap: 'tilemap', tilelayer: 'Tile Layer 1',
-  x:0,  y:-1536,  /* world size */
-  x2:2048, y2:1024,
-  background: 'background',
-  bgPercent : 0.15,  /** This percentage of the main screen Scale will be used as the Backgrounds scale.
-                      ** Small values = a slow moving distant background */
-  bgOffset:{      /** Because the background maths is calculated from the screen middle, you may need to */
-    x:400, y:470  /** pull the background to the left and to the top. Tweak this to make sure the      */
-  },              /** background neatly covers the whole world. */
-  scaleModes:[
-    {scale:1.0, screenBottom:730, trigger:0},
-    {scale:0.59, screenBottom:960, trigger:800},
-    {scale:0.49, screenBottom:960, trigger:1600}
-  ],
-  player: {x:430, y:616},
-  enemy: [{x:1400, y:607, type:1}],
-  bitmap: [{x1:130,y1:300,  x2:800,y2:640, type:DRAWING}, /* players drawing area */
-           {x1:1100,y1:200, x2:1800,y2:640, type:ENEMY_DRAWING} /* enemys drawing bitmap area */
-          ]
-},{
-  level:2,
-  tilemap: 'tilemap', tilelayer: 'Tile Layer 2',
-  x:0,  y:-1536, x2:2048, y2:1024, /* world size */
-  background: 'background',
-  bgPercent : 0.15, bgOffset:{ x:900, y:470 },
-  scaleModes:[
-    {scale:1.0, screenBottom:750, trigger:0},
-    {scale:0.59, screenBottom:960, trigger:1000},
-    {scale:0.49, screenBottom:960, trigger:1300},
-    {scale:0.44, screenBottom:960, trigger:1600}
-  ],
-  player: {x:430, y:616},
-  enemy: [{x:1400, y:607, type:1, autoBitmap:true},
-          {x:1900, y:307, type:1, autoBitmap:true}],
-  bitmap: [{x1:130,y1:300,  x2:800,y2:640, type:DRAWING} /* players drawing area */
-//           {x1:1299,y1:200, x2:1800,y2:640, type:ENEMY_DRAWING}, /* enemys drawing bitmap area */
-//           {x1:900,y1:200,  x2:1300,y2:640, type:ENEMY_DRAWING}  /* 2nd enemys drawing bitmap */
-          ]
-},{
-  level:3,
-  tilemap: 'tilemap', tilelayer: 'Tile Layer 3',
-  x:0,  y:-1536, x2:2048, y2:1024, /* world size */
-  background: 'background',
-  bgPercent : 0.15, bgOffset:{ x:1400, y:300 },
-  scaleModes:[
-    {scale:0.95, screenBottom:690, trigger:0},
-    {scale:0.59, screenBottom:960, trigger:1000},
-    {scale:0.49, screenBottom:960, trigger:1300},
-    {scale:0.44, screenBottom:960, trigger:1950}
-  ],
-  player: {x:300, y:416},
-  enemy: [{x:1200, y:707, type:1, autoBitmap:true},
-          {x:1420, y:420, type:1, autoBitmap:true},
-          {x:1600, y:107, type:1, autoBitmap:true}],
-  bitmap: [{x1:130,y1:300,  x2:800,y2:640, type:DRAWING} /* players drawing area */
-          ]
-}];
-
 var level = levels[1]; /* starting level */
 var learning = new Learning();
+
+/* hack */
+//learning.stage=100; level = levels[3];
 
 /************************** LOADING STATE ************************************/
 var loadState = {  /* 'load' state */
@@ -128,11 +71,12 @@ var loadState = {  /* 'load' state */
     game.load.image("cloud", "assets/cloud.png");
     //game.load.image("tank_right", "assets/tank_right.png");
     game.load.image("tank_left", "assets/tank_left.png");
-    game.load.image("tank2_right", "assets/tank2_fromVector2.png");
-    //game.load.image("bullet", "assets/bullet.png");
+    //game.load.image("tank2_right", "assets/tank2_fromVector2.png");
     game.load.spritesheet("bullets", "assets/bullets.png",15,15);
     //game.load.image("trace", "assets/trace.png");
     game.load.spritesheet("tanks", "assets/tanks spritesheet88wh.png",88,88);
+    game.load.spritesheet("turrets", "assets/turret17w45h.png",17,45);
+    game.load.spritesheet("sliding_door", "assets/metal panel 17w216h.jpg",17,216);
 
     game.load.spritesheet("boom", "assets/boom32wh12.png",32,32,12);
     game.load.spritesheet("fire", "assets/fire spritesheet200wh.png",200,200);
@@ -150,8 +94,8 @@ var loadState = {  /* 'load' state */
     game.load.tilemap('tilemap', 'assets/tilemap multi.json', null, Phaser.Tilemap.TILED_JSON);
     game.load.image('jungletileset', 'assets/jungletileset_32x32.png');
     /* Audio */
-    game.load.audio('audio1', 'assets/audio/Wood Hits.wav');
-    game.load.audio('audio2', 'assets/audio/Explosion.wav');
+    //game.load.audio('audio1', 'assets/audio/Wood Hits.wav');
+    //game.load.audio('audio2', 'assets/audio/Explosion.wav');
     game.load.audio('explosions',"assets/audio/Explosions edited Combined.wav");
   },
   create: function() {
@@ -166,6 +110,7 @@ var playState = {
 	{
     myGame=this;
     this.count = 0;
+    this.updateSignal = new Phaser.Signal();
 
     game.physics.startSystem(Phaser.Physics.ARCADE);
     game.physics.arcade.gravity.y = 600;
@@ -194,16 +139,17 @@ var playState = {
     this.zoomable = game.add.group(); /*Everything that is zoomable on the game stage in here */
     this.zoomable.add(this.background);
 
-    this.land = new Land(this); /* controls the foreground landscape bitmap, created from a tilemap */
+    this.land = new Land(this, level.tilemap); /* controls the foreground landscape bitmap, created from a tilemap */
     //this.land.createBitmap(130,300, 800,640, DRAWING); /* players drawing area */
     this.land.createBitmaps(level.bitmap);
 
     this.static = game.add.group(); /* things fixed to the screen, like buttons, excluded from zoom */
 
+    this.particles = new Particles(this.land, this.zoomable);
     /************ Bullets *****************/
     this.bullets = new Bullets( this.land, this.zoomable );
     this.trace = new Trace( this.zoomable );
-    this.particles = new Particles(this.land, this.zoomable);
+
 
     /******* Player ********************/
     this.player = new Player(level.player.x, level.player.y, this.zoomable);
@@ -259,7 +205,6 @@ var playState = {
       this.startPlay();
     }
 
-
     //audio1 = game.add.audio('audio1');
     //audio1.allowMultiple = true;
 	  //audio1.addMarker('gunshot', 0.1, 0.20);
@@ -286,6 +231,7 @@ var playState = {
     if (this.count==1) game.camera.flash(0x000000, 600, true);
 
     /************ Gun *****************************************/
+    this.player.updatePlayer();
 
     /********** Foreground ************************************/
     //updateLand(this);
@@ -306,6 +252,9 @@ var playState = {
 
     this.learning.update();
 
+    /* anyone else whos got stuff to run on the Update cycle */
+    this.updateSignal.dispatch( this.count );
+
     //p = screenToWorld( { x:(game.width/2), y:(game.height/2) } );
     //titlePage.x = p.x; titlePage.y = p.y;
     //titlePage.scale.set(screenToWorldScale(1.0));
@@ -314,10 +263,6 @@ var playState = {
     titlePage.bringToTop();
 
     /************ Keyboard ********************************/
-    //player.body.velocity.x=0;
-    //player.body.velocity.y=0;
-    //enemy.body.velocity.x=0;
-    //enemy.body.velocity.y=0;
     var tank=this.player.tank;
     if (this.cursors.left.isDown) {
         tank.body.velocity.x = -tank.speed; }
@@ -342,6 +287,7 @@ var playState = {
     game.physics.arcade.collide(this.player.tank, this.bullets, tankToBulletsHandler, null, this);
     this.player.updatePlayer( this.land );
 
+    /* handle Land roving for player and enemys */
     collisionTankToLand( this.player.tank, this.land);
     this.enemys.collisionTankToLand( this.land );
 
@@ -358,6 +304,9 @@ var playState = {
                       +"player "+this.player.tank.x.toFixed(0)+","+this.player.tank.y.toFixed(0)
                       +" gun "+this.player.gun.angle.toFixed(1)+"a "+this.player.gun.power.toFixed(1)+"p"
                       || '--', 2, 14, "#00ff00");
+
+    //game.debug.body(this.player.tank);
+    //if (this.enemys.arr[0]) this.enemys.debug();
   },
   startPlay: function() {
     /* After the title screen, called when user presses Play button. begin Play */
@@ -412,12 +361,7 @@ var playState = {
     this.joystick=new Joystick(this.player);
     this.screenFix.add( this.joystick, this.joystick.center.x, -this.joystick.center.y, 1.0 );
   }
-//  playerKilled: function( player ) {
-//    this.finishPlay(LOOSE);
-//  },
-//  enemyKilled: function( enemy ) {
-//    this.finishPlay(WIN);
-//  }
+
 };
 
 /********************** TITLE PAGES & WIN PAGE ****************************************/
