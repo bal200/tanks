@@ -74,14 +74,13 @@ Bullets.prototype.playerFire = function( type ) {
   var bullet = this.getFirstExists(false);
   if (bullet) {
     var vec = angleToVector( gun.angle );
-    bullet.reset(player.tank.x + (vec.x*50), player.tank.y + (vec.y*50));
+    bullet.reset(player.tank.x +(vec.x*50) -5, player.tank.y +(vec.y*50) -10);
     var power = (gun.power *9) +300; /* gun.power is 0-100 */
     bullet.body.velocity.x = vec.x * power;
     bullet.body.velocity.y = vec.y * power;
     bullet.whos = PLAYER;/* the player fired it */
     bullet.type = type;
     bullet.frame = type-1;
-    //audio1.play('gunshot'); /* gunshot noise */
     myGame.audio.play('explosion5');
     //bulletTime = game.time.now + 200;
     if (myGame.joystick) {
@@ -221,7 +220,7 @@ Trace.prototype.updateTrace = function(player, land) {
           vec = vec.rotate(0,0, gun.angle, true);
 
                               /* end of gun barrel */
-    var p = new Phaser.Point(player.tank.x +(vec.x*50), player.tank.y +(vec.y*50));
+    var p = new Phaser.Point(player.tank.x +(vec.x*50)-5, player.tank.y +(vec.y*50)-10);
     var last = new Phaser.Point(p.x, p.y);
     var power = (gun.power *9) +300;
     var deltaX = (vec.x * power) / 100;

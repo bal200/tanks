@@ -94,11 +94,20 @@ Joystick.prototype.onPointerMove = function ( p ) {
 
     /* Draw the joypads gun-barrel graphic */
     this.updateJoypadBarrel();
+    this.player.updateTurret();
     this.last = s;
     this.lastAngle = angle;
     this.lastDist = dist;
   }
 };
+
+Joystick.prototype.initialMoveUp = function () {
+  game.add.tween(this.barrel).to({angle:50}, /*duration*/1000,
+    Phaser.Easing.Quadratic.InOut , /*autostart*/true, /*delay*/400, /*repeat*/0, /*yoyo*/false);
+  game.add.tween(this.player.gun).to({angle:50}, /*duration*/1000,
+    Phaser.Easing.Quadratic.InOut , /*autostart*/true, /*delay*/400, /*repeat*/0, /*yoyo*/false);
+  
+}
 
 /* jiggle the joystick after firing to mimic kick-back */
 Joystick.prototype.drift = function () {
