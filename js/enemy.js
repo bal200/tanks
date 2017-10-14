@@ -210,7 +210,7 @@ SlidingDoor.prototype.open = function() {
 SlidingDoor.prototype.update = function() {
   this.updateCrop();
   /* @TODO: change body after crop */
-  //this.body.setSize(48,62, 16,5);
+  this.body.setSize(17,this.myCropRect.height, 0,0);
 } 
 
 SlidingDoor.prototype.startLogic = function() {

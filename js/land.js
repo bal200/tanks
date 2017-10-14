@@ -11,16 +11,6 @@ var Land = function( myGame, data ) {
   for (var n=0; n<data.length; n++) {
     this.tilemaps[n] = this.loadTilemap(data[n]);
   }
-  //this.tilemap = game.add.tilemap(level.tilemap /*'tilemap'*/);
-  //this.tilemap.addTilesetImage('jungletileset_32x32', 'jungletileset');
-  //this.layer = this.tilemap.createLayer(level.tilelayer,
-  //                  this.tilemap.widthInPixels, this.tilemap.heightInPixels, myGame.zoomable);
-  //this.layer.fixedToCamera = false;
-  //this.layer.autoCull = false;
-
-  // this.layer.debug = true;
-  //this.tilemap.setCollisionBetween(1,884); /* set all the tiles as things to bump into */
-  //myGame.zoomable.add(this.layer);
 
   this.myGame = myGame;
   this.bitmaps = []; /* list of destructable squares over the map */
@@ -49,6 +39,9 @@ Land.prototype.loadTilemap = function(data) {
                     tilemap.widthInPixels, tilemap.heightInPixels, myGame.zoomable);
   layer.fixedToCamera = false;
   layer.autoCull = false;
+    // this.layer.debug = true;
+  //this.tilemap.setCollisionBetween(1,884); /* set all the tiles as things to bump into */
+  //myGame.zoomable.add(this.layer);
   var myTilemap={
     tilemap: tilemap,
     layer: layer,
@@ -73,7 +66,6 @@ Land.prototype.tilemapToBitmaps = function() {
     }
   }
 }
-
 
 Land.prototype.createBitmap = function(x1,y1, x2,y2, type) {
   var bitmap = new Bitmap(x1,y1, x2,y2, type);
@@ -136,10 +128,6 @@ Land.prototype.updateLand = function() {
   /* now the tilemap has been rendered, copy it to a bitmap instead, so our destructable landscape works */
   if (this.myGame.count == 2) {
     this.tilemapToBitmaps();
-    //game.world.bringToTop(this.myGame.button);
-    //game.world.bringToTop(drawButton);
-    //game.world.bringToTop(this.bitmaps[0].image);
-    //this.myGame.zoomable.sort(); /* put everything back in order of their Z depth */
   }
 };
 
