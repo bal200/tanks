@@ -28,6 +28,7 @@ var Bullets = function ( land, group, myCam ) {
       b.type=BAZOOKA; /* bullet or grenade */
       b.frame=1;
       b.events.onOutOfBounds.add(function(bullet) {
+        console.log("bullet out of bounds");
         bullet.kill();
       } /*, th*/ );
   }

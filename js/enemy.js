@@ -7,52 +7,82 @@
  **/
 // this.enemy = new Enemy(level.enemy[0].x, level.enemy[0].y, this.bullets, this.land, this.zoomable);
 
-/* Enemy types */
+/* Enemy types (myType to avoid a clash in Phaser) */
 var TANK1 = 1;
 var SLIDING_DOOR = 2;
 
-var Enemys = function( data, myGame, group ) {
-  this.arr = [];
-  for (var n=0; n<data.length; n++) {
-    if (data[n].type==TANK1) {
-      this.arr[n] = new Enemy(data[n], myGame.bullets, myGame.land, /*display group*/group);
-    }else if (data[n].type==SLIDING_DOOR) {
-      this.arr[n] = new SlidingDoor(data[n], /*display group*/group);
-      this.arr[n].startLogic();
+var Enemys = function( levelData, myGame, group, land ) {
+  Phaser.Group.call(this, game); /* create a Group, the parent Class */
+  //this.arr = [];
+
+  /* Create the enemy tanks from tilemap data */
+  land.tilemap.createFromObjects( levelData.objects.tilelayer, 
+       /*gid*/2, 'tank_left', /*frame*/0, true,false, /*group*/this, Enemy, true );
+  
+       /* Create the Sliding doors from tilemap data */
+  land.tilemap.createFromObjects( levelData.objects.tilelayer, 
+      /*gid*/3, 'sliding_door', /*frame*/0, true,false, /*group*/this, SlidingDoor, true );
+ 
+  for (var n=0; n<this.children.length; n++) {
+  //this.forEach(function (enemy) {
+    var enemy=this.children[n];
+    if (enemy.name=='TANK1') { /* note STRING! */
+      //console.log("type==TANK1");
+      enemy.myType=TANK1;
+      enemy.scale.set(1.0);
+      //this.arr[n] = new Enemy(data[n], myGame.bullets, myGame.land, /*display group*/group);
+      //this.arr[n] = new Enemy(game, data[n].x, data[n].y);
+    }else if (enemy.name=='SLIDING_DOOR') {
+      enemy.secondarySetup();
+      //enemy.scale.set(1.0);
+    //  this.arr[n] = new SlidingDoor(data[n], /*display group*/group);
+      enemy.startLogic();
+console.log(enemy);
     }
-    if (data[n].autoBitmap===true) {
-      myGame.land.createBitmapForEnemyTank( this.arr[n] );
+    if (enemy.autoBitmap===true) {
+      myGame.land.createBitmapForEnemyTank( enemy );
     }
   }
+  //}, this);
+  group.add(this);
   this.myGame=myGame;
 };
+inheritPrototype(Enemys, Phaser.Group);
+
 Enemys.prototype.debug = function() {
-  for (var n=0; n<this.arr.length; n++) {
-    game.debug.body(this.arr[n]); }
+  //for (var n=0; n<this.arr.length; n++) {
+  this.forEach(function (enemy) {
+    game.debug.body(enemy/*this.arr[n]*/);
+  }, this);
+
 };
 Enemys.prototype.startLogic = function() {
-  for (var n=0; n<this.arr.length; n++) {
-    this.arr[n].startLogic(); }
+  this.forEach(function (enemy) {  
+    enemy.startLogic();
+  }, this);
 };
 Enemys.prototype.stopLogic = function() {
-  for (var n=0; n<this.arr.length; n++) {
-    this.arr[n].stopLogic(); }
+  this.forEach(function (enemy) {  
+    enemy.stopLogic();
+  }, this);
 };
 
 /* used by the Learning routine to fire that first shot in training. */
 Enemys.prototype.fireShot = function(angle,power) {
-  this.arr[0].enemyFire(angle,power);
+  var enemy = this.getFirstExists();
+  enemy.enemyFire(angle,power);
   myGame.audio.play('explosion2'); /* for the first shot of the game, use a bigger sound */
 };
 Enemys.prototype.collisionTankToLand = function(land) {
-  for (var n=0; n<this.arr.length; n++) {
-    if (this.arr[n].type==TANK1) collisionTankToLand( this.arr[n], land);
-  }
+  //for (var n=0; n<this.arr.length; n++) {
+  this.forEach(function (enemy) { 
+    if (enemy.myType==TANK1) collisionTankToLand( enemy, land);
+  }, this);
 };
 /* Check if any Enemy tanks are still alive. returns true if any are still going */
 Enemys.prototype.anyAlive = function() {
-  for (var n=0; n<this.arr.length; n++) {
-    if (this.arr[n].type==TANK1 && this.arr[n].alive) return true;
+  for (var n=0; n<this.children.length; n++) {
+    if (this.children[n].myType==TANK1 && this.children[n].alive) return true;
   }
   return false;
 };
@@ -61,10 +91,12 @@ Enemys.prototype.anyAlive = function() {
 /***  has automated random firing and base building functions. startLogic(),
  ***  which will repeat enemyLogic() every 2 secs.
  **/
-var Enemy = function( data, bullets, land, group ) {
+//var Enemy = function( data, bullets, land, group ) {
+var Enemy = function( game, x,y , key, frame) {
   /* create a Group, the parent Class */
-  Phaser.Sprite.call(this, game, data.x, data.y, 'tank_left');
-  this.type = data.type;
+  Phaser.Sprite.call(this, game, x,y, 'tank_left');
+  //this.type = data.type;
+  //this.type=TANK1;
   this.anchor.set(0.5, 0.65);
   this.speed = 200;
   game.physics.enable(this, Phaser.Physics.ARCADE);
@@ -75,9 +107,9 @@ var Enemy = function( data, bullets, land, group ) {
   this.health=100;
   this.events.onKilled.add(this.enemyOnKilled , this);
 
-  group.add( this );
-  this.bullets=bullets;
-  this.land=land;
+  myGame.zoomable.add( this );
+  this.bullets=myGame.bullets;
+  this.land=myGame.land;
 };
 inheritPrototype(Enemy, Phaser.Sprite);
 
@@ -167,60 +199,79 @@ Enemy.prototype.stopLogic = function() {
 };
 
 /*************************************************************************************/
-SlidingDoor = function(data, group) {
-  Phaser.Sprite.call(this, game, data.x, data.y, 'sliding_door');
-  
-  game.physics.enable(this, Phaser.Physics.ARCADE);
-  this.body.immovable=true;
-  this.body.allowGravity = false;
-  this.frame = 1;
-  this.angle = data.angle;
-  this.anchor.set(0.5, 0);
-  this.health = 10000;
-  this.origHeight = data.length;
-  this.spriteHeight = this.height;
-
+SlidingDoor = function( game, x,y , key, frame) {
+  Phaser.Image.call(this, game, x, y, 'sliding_door');
+  //game.physics.enable(this, Phaser.Physics.ARCADE);
+  //this.body.immovable=true;
+  //this.body.allowGravity = false;
+  //this.frame = 1;
+  //this.angle = data.angle;
+  this.anchor.set(0, 0);
+  //this.health = 10000;
+  //this.origHeight = this._height; //data.length;
+  //this.width = this._width;
   /* we'll use sprite Cropping to open and close the door */
-  this.myCropRect = new Phaser.Rectangle(0,this.spriteHeight-this.origHeight, 
-                               this.width,this.origHeight);
-  this.crop(this.myCropRect);
-  group.add(this);
-//  this.flange1=game.add.sprite(data.x, data.y, 'bullets'); this.flange1.anchor.set(0.5,0);
-//  this.flange1.frame=2; group.add(this.flange1);
-//  this.flange2=game.add.sprite(data.x, data.y+data.length, 'bullets'); this.flange2.anchor.set(0.5,1);
-//  this.flange2.frame=2; group.add(this.flange2);
-
-  myGame.updateSignal.add(this.update, this); /* we need to update the crop each update, so subscribe */
+  //this.myCropRect = new Phaser.Rectangle(0,this.spriteHeight-this.origHeight, 
+  //                             this.width,this.origHeight);
+  //this.crop(this.myCropRect);
+  //group.add(this);
+  this.spriteHeight = this.height;
+  this.spriteWidth = this.width;
+  this.startY = y; /* needs correcting in secondarySetup */
+  this.closed=true;
+  //this.bitmap = myGame.land.createBitmap(x,y, x+17, y+200/*this.height*/, OBJECTS);
+  myGame.updateSignal.add(this.update, this); /* we need to redraw each update, so subscribe */
+  //this.visible=false;
 };
-inheritPrototype(SlidingDoor, Phaser.Sprite);
+inheritPrototype(SlidingDoor, Phaser.Image);
+SlidingDoor.prototype.secondarySetup = function() {
+  this.doorHeight = this.height; /* the height of the door frame on the map to fill */
+  this.doorPos = this.doorHeight - this.spriteHeight; /* current Y position of the door (closed) */
+  this.startY -= (this.height);
+
+  this.scale.set(1.0);
+  this.bitmap = new Bitmap(this.x,this.y, this.x+this.spriteWidth, this.y+this.spriteHeight, OBJECTS, this);
+  myGame.land.addBitmapToList(this.bitmap);
+  this.bitmap.bitmap.draw('sliding_door', 0,0);
+
+  //this.myCropRect = new Phaser.Rectangle(0,this.spriteHeight-this.origHeight, 
+  //  this.spriteWidth,this.origHeight);
+  //this.crop(this.myCropRect);
+  this.myType=SLIDING_DOOR;
+}
 
 SlidingDoor.prototype.close = function() {
-  game.add.tween(this.myCropRect).to({y: this.spriteHeight - this.origHeight,
-                                      height: this.origHeight},
-    /*duration*/500, Phaser.Easing.Quintic.InOut, /*autostart*/true, /*delay*/0, /*repeat*/0, /*yoyo*/false);
-  
+  //game.add.tween(this.cropRect).to({y: this.spriteHeight - this.doorHeight,
+  //                              height: this.doorHeight},
+  //  /*duration*/500, Phaser.Easing.Quintic.InOut, /*autostart*/true, /*delay*/0, /*repeat*/0, /*yoyo*/false);
+  game.add.tween(this).to({doorPos: this.doorHeight - this.spriteHeight},
+    /*duration*/1000, Phaser.Easing.Quintic.InOut, /*autostart*/true, /*delay*/0, /*repeat*/0, /*yoyo*/false);
+
+  this.closed=true;
 }
 SlidingDoor.prototype.open = function() {
-  game.add.tween(this.myCropRect).to({y: this.spriteHeight,
-                                      height: 0},
-    /*duration*/500, Phaser.Easing.Quintic.InOut, /*autostart*/true, /*delay*/0, /*repeat*/0, /*yoyo*/false);
-
+  game.add.tween(this).to({doorPos: -this.spriteHeight},
+    /*duration*/1000, Phaser.Easing.Quintic.InOut, /*autostart*/true, /*delay*/0, /*repeat*/0, /*yoyo*/false);
+  this.closed=false;
 }
 /* our callback for the update signal */
 SlidingDoor.prototype.update = function() {
-  this.updateCrop();
-  /* @TODO: change body after crop */
-  this.body.setSize(17,this.myCropRect.height, 0,0);
+  //this.bitmap.bitmap.copy('sliding_door', 0, 0, 17,200);
+  //this.bitmap.bitmap.cls();
+  //this.bitmap.bitmap.draw('sliding_door', 0, this.doorPos);
+  this.bitmap.setY(this.startY + this.doorPos);
+  //this.updateCrop();
+  //this.body.setSize(17,this.myCropRect.height, 0,0);
 } 
 
 SlidingDoor.prototype.startLogic = function() {
   if (!this.logicTimeout) {
-    this.logicTimeout=game.time.events.add(2000, this.enemyLogic.bind(this), this);
+    this.logicTimeout=game.time.events.add(4000, this.enemyLogic.bind(this), this);
   }
 };
 SlidingDoor.prototype.enemyLogic = function() {
-  if (this.height==0) this.close(); else this.open();
-  this.logicTimeout=game.time.events.add(2000, this.enemyLogic.bind(this), this);  
+  if (this.closed) this.open(); else this.close();
+  this.logicTimeout=game.time.events.add(4000, this.enemyLogic.bind(this), this);  
 }
 
 SlidingDoor.prototype.stopLogic = function() {
