@@ -101,7 +101,7 @@ Bullets.prototype.checkBulletsToLand = function (myCam) {
     var x = Math.floor(bullet.x);
     var y = Math.floor(bullet.y);
     /* screen zoom out trigger */
-    if (bullet.whos==1) {
+    if (bullet.whos==PLAYER) {
       var o=myCam.checkBulletForCameraMove(x,y);
       if (o>over) over=o; /* find the furthest bullets x coord */
     }
@@ -141,7 +141,7 @@ Bullets.prototype.checkBulletsToLand = function (myCam) {
 Bullets.prototype.explodeBulletLand = function(bullet, land, p, bitmap) {
   this.explode(bullet); /* small explosion graphic */
   /* Erase a Circle in the land to make a crater */
-  land.drawCrater(p.x, p.y, 16, /*exclude*/LAND);
+  land.drawCrater(p.x, p.y, 16, [DRAWING, ENEMY_DRAWING]); /* bitmap types to crater */
   /* let the sparks fly! */
   if (bitmap.type == LAND) {
     myGame.particles.createFlurry (p.x, p.y, 1, bullet.body/*used for direction angle*/);

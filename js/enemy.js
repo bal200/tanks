@@ -124,7 +124,7 @@ Enemy.prototype.enemyOnKilled = function(tank) {
   /* check the array of tanks for more alive */
   if (myGame.enemys.anyAlive() === false)
      myGame.finishPlay( WIN );
-  this.stopLogic();
+  this.stopLogic(); /* @TODO: Bug here! */
 };
 
 Enemy.prototype.enemyFire = function(angle, power) {
@@ -167,7 +167,7 @@ Enemy.prototype.enemyLogic = function() {
       break;
   }
   /* call this func again in a random time */
-  this.enemyLogicTimeout=setTimeout(this.enemyLogic.bind(this), game.rnd.between(100, 3000));
+  this.logicTimeout=setTimeout(this.enemyLogic.bind(this), game.rnd.between(100, 3000));
 };
 
 Enemy.prototype.enemyDrawRandomDefence = function() {
@@ -206,7 +206,7 @@ SlidingDoor = function( game, x,y , key, frame) {
   //this.body.allowGravity = false;
   //this.frame = 1;
   //this.angle = data.angle;
-  this.anchor.set(0, 0);
+  this.anchor.set(0.5, 0);
   //this.health = 10000;
   //this.origHeight = this._height; //data.length;
   //this.width = this._width;
@@ -226,13 +226,14 @@ SlidingDoor = function( game, x,y , key, frame) {
 inheritPrototype(SlidingDoor, Phaser.Image);
 SlidingDoor.prototype.secondarySetup = function() {
   this.doorHeight = this.height; /* the height of the door frame on the map to fill */
-  this.doorPos = this.doorHeight - this.spriteHeight; /* current Y position of the door (closed) */
-  this.startY -= (this.height);
+  this.doorPos = 0; /* current Y position of the door (closed) */
+  this.startY -= (this.height); /* Tiled puts the Y at the bottom.  corrected */
 
   this.scale.set(1.0);
-  this.bitmap = new Bitmap(this.x,this.y, this.x+this.spriteWidth, this.y+this.spriteHeight, OBJECTS, this);
+  this.bitmap = new Bitmap(this.x, this.y, 
+                    this.x+this.spriteWidth, this.y+this.doorHeight, OBJECTS, this);
   myGame.land.addBitmapToList(this.bitmap);
-  this.bitmap.bitmap.draw('sliding_door', 0,0);
+  this.bitmap.drawSprite('sliding_door', 0,this.doorHeight - this.spriteHeight);
 
   //this.myCropRect = new Phaser.Rectangle(0,this.spriteHeight-this.origHeight, 
   //  this.spriteWidth,this.origHeight);
@@ -244,13 +245,13 @@ SlidingDoor.prototype.close = function() {
   //game.add.tween(this.cropRect).to({y: this.spriteHeight - this.doorHeight,
   //                              height: this.doorHeight},
   //  /*duration*/500, Phaser.Easing.Quintic.InOut, /*autostart*/true, /*delay*/0, /*repeat*/0, /*yoyo*/false);
-  game.add.tween(this).to({doorPos: this.doorHeight - this.spriteHeight},
+  game.add.tween(this).to({doorPos: 0},
     /*duration*/1000, Phaser.Easing.Quintic.InOut, /*autostart*/true, /*delay*/0, /*repeat*/0, /*yoyo*/false);
 
   this.closed=true;
 }
 SlidingDoor.prototype.open = function() {
-  game.add.tween(this).to({doorPos: -this.spriteHeight},
+  game.add.tween(this).to({doorPos: -this.doorHeight},
     /*duration*/1000, Phaser.Easing.Quintic.InOut, /*autostart*/true, /*delay*/0, /*repeat*/0, /*yoyo*/false);
   this.closed=false;
 }

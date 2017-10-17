@@ -6,6 +6,7 @@ var DRAWING = 2;
 var ENEMY_DRAWING = 3;
 var COSMETIC = 4;
 var OBJECTS = 5; /* SlidingDoor */
+var ALL_SOLID_TYPES = [1,2,3,5];
 
 var Land = function( myGame, data ) {
   this.tilemaps=[];
@@ -45,6 +46,10 @@ Bitmap.prototype.setX = function(x) {
 }
 Bitmap.prototype.setY = function(y) {
   this.y1=y; this.y2 = y + this.height; this.image.y=y;
+}
+Bitmap.prototype.drawSprite=function(key, x,y) {
+  this.bitmap.draw(key, x,y);
+  this.bitmap.update();
 }
 /* take a tilemap layer json from Tiled file, and prepare it into my own object
  * containing the tilemap, layer obj, and my level_data info */
@@ -92,6 +97,7 @@ Land.prototype.addBitmapToList = function(b) {
   this.bitmaps.push(b);
   this.myGame.zoomable.add(b.image); /* add to group */
 };
+
 /* Create a list of bitmaps, from the level data object */
 Land.prototype.createBitmaps = function(data/* json object from level data */) {
   var b; for (var n=0; n<data.length; n++) {
@@ -105,12 +111,12 @@ Land.prototype.createBitmapForEnemyTank = function( tank ) {
 
 /* check for a pixel hit on the bitmaps.  returns 1 if a land/drawing pixel exists */
 /* set excludeType to a bitmap type to skip that bitmap (eg players own defences) */
-Land.prototype.getPixel = function(x,y, excludeType) {
-  if (excludeType==undefined) excludeType=0;
+Land.prototype.getPixel = function(x,y, typeList) {
+  if (typeList==undefined) typeList = ALL_SOLID_TYPES;
   for (n=0; n<this.bitmaps.length; ++n){
     var b=this.bitmaps[n];
-    if (b && (b.type != excludeType)) {
-      if (x>b.x1 && x<b.x2 && y>b.y1 && y<b.y2) {
+    if ( b && (typeList.includes(b.type)) ) {
+      if ( x>b.x1 && x<b.x2 && y>b.y1 && y<b.y2 ) {
         var rgba = b.bitmap.getPixel( x-b.x1, y-b.y1 );
         if (rgba.a >0) return 1;
         /* else continue, as bitmaps can overlap, there maybe more */
@@ -153,15 +159,13 @@ Land.prototype.updateLand = function() {
 
 /* collision detect between land and the bullet or trace */
 /* this collision function will exclude hits in the tanks own defence area */
+/* @TODO: pass an array of Types to check, rather than exclude */
 Land.prototype.checkBitmapForHit = function(x,y, who) {
-  var excludeType=0;
-  if (who==PLAYER) excludeType=DRAWING;
-  if (who==ENEMY) excludeType=ENEMY_DRAWING;
+  var types;
+  if (who==PLAYER) types=[LAND, ENEMY_DRAWING, OBJECTS];
+  if (who==ENEMY) types=[LAND, DRAWING, OBJECTS];
 
-  if (this.getPixel(x, y, excludeType)) {
-    return 1;
-  }else
-    return 0;
+  return this.getPixel(x, y, types);
 };
 
 var RIGHT=1, BOTTOM=2, LEFT=3, TOP=4, UP=5, DOWN=6;
@@ -191,7 +195,6 @@ Land.prototype.getSurfaceNormal = function(x,y) {
   if (!cur) return 0; /* error */
   start={x:cur.x, y:cur.y, v:cur.v,d:cur.d, a:cur.a}; /* quick object copy */  //findFirstVertex(grid, {x:10, y:10, v:0,d:0} );
   do{
-//    console.log(cur);
     total += cur.a;
     count++;
     cur = nextVertex(grid, cur);
@@ -200,13 +203,12 @@ Land.prototype.getSurfaceNormal = function(x,y) {
   cur=changeDirection(start);
   cur=nextVertex(grid, cur);
   do{
-//    console.log(cur);
     total += cur.a;
     count++;
     cur = nextVertex(grid, cur);
   }while(withinBounds(cur, SIZE) && count<40);
 
-//console.log("total "+total+" count "+count);
+  //console.log("total "+total+" count "+count);
   var ang=(total / count);
   if (ang>=360) ang-=360;
   if (ang<0) ang+=360;
@@ -319,14 +321,13 @@ Land.prototype.whichBitmaps = function(x1,y1,x2,y2, type) {
 };
 
 /* Erase a Circle in the land to make a crater 
- * Will draw to any bitmap, Except the bitmap type in excludeBitmap */
-Land.prototype.drawCrater = function( x,y, width, excludeType) {
+ * Will draw to bitmap/s at these coords, but only if its in the types list (Eg LAND) */
+Land.prototype.drawCrater = function( x,y, width, typeList) {
   var h=width/2;
   for (n=0; n<this.bitmaps.length; ++n){
     var b=this.bitmaps[n];
-    if (b && (b.type != excludeType)) {
-      if ( x>(b.x1-h) && x<(b.x2+h) &&
-           y>(b.y1-h) && y<(b.y2+h) ) {
+    if ( b && (typeList.includes(b.type)) ) {
+      if ( x>(b.x1-h) && x<(b.x2+h) && y>(b.y1-h) && y<(b.y2+h) ) {
         b.bitmap.blendDestinationOut();
         b.bitmap.circle(x-b.x1, y-b.y1, width);
         b.bitmap.blendReset();
