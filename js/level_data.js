@@ -4,6 +4,7 @@
 var levels = [{},{  /* Settings for each level in the game */
   level:1,
   tilemap: [{tilemap: 'tilemap', tilelayer: 'Tile Layer 1', type:LAND}],
+  objects: {tilemap:'tilemap', tilelayer: 'Tile Layer 1 Objects'},
   x:0,  y:-1536,  /* world size */
   x2:2048, y2:1024,
   background: 'background',
@@ -25,6 +26,7 @@ var levels = [{},{  /* Settings for each level in the game */
 },{
   level:2,
   tilemap: [{tilemap: 'tilemap', tilelayer: 'Tile Layer 2', type:LAND}],
+  objects: {tilemap:'tilemap', tilelayer: 'Tile Layer 2 Objects'},
   x:0,  y:-1536, x2:2048, y2:1024, /* world size */
   background: 'background',
   bgPercent : 0.15, bgOffset:{ x:900, y:470 },
@@ -47,6 +49,7 @@ var levels = [{},{  /* Settings for each level in the game */
     {tilemap:'tilemap', tilelayer: 'Tile Layer 3', type:LAND, fullSize:true},
     {tilemap:'tilemap', tilelayer: 'Tile Layer 3 Cosmetic', type:COSMETIC, fullSize:true}
   ],
+  objects: {tilemap:'tilemap', tilelayer: 'Tile Layer 3 Objects'},
   x:0,  y:-1536, x2:2048, y2:1024, /* world size */
   background: 'background',
   bgPercent : 0.15, bgOffset:{ x:1400, y:300 },
@@ -63,5 +66,25 @@ var levels = [{},{  /* Settings for each level in the game */
           {x:784, y:224, type:SLIDING_DOOR, angle:0, length:192}],
   bitmap: [{x1:130,y1:300,  x2:800,y2:640, type:DRAWING} /* players drawing area */
         /*   {x1:130,y1:300,  x2:800,y2:640, type:COSMETIC} */
+          ]
+},{
+  level:4,
+  tilemap: [
+    {tilemap:'tilemap_long', tilelayer: 'Tile Layer 4', type:LAND}
+  ],
+  objects: {tilemap:'tilemap_long', tilelayer: 'Tile Layer 4 Objects'},
+  x:0,  y:-2600, x2:4096, y2:960/*480*/, /* world size */
+  background: 'background',
+  bgPercent : 0.15, bgOffset:{ x:1500, y:470 },
+  scaleModes:[
+    {scale:0.95, screenBottom:640, trigger:0},
+    {scale:0.48, screenBottom:640, trigger:1000},
+    {scale:0.35, screenBottom:640, trigger:1700},
+    {scale:0.27, screenBottom:640, trigger:2400}
+  ],
+  player: {x:300, y:400},
+  /*enemy: [{x:3900, y:400, type:TANK1, autoBitmap:true},
+  ],*/
+  bitmap: [{x1:130,y1:300,  x2:800,y2:640, type:DRAWING} /* players drawing area */
           ]
 }];

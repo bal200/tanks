@@ -45,7 +45,7 @@ var level = levels[1]; /* starting level */
 var learning = new Learning();
 
 /* hack */
-//learning.stage=100; level = levels[3];
+learning.stage=100; level = levels[3];
 
 /************************** LOADING STATE ************************************/
 var loadState = {  /* 'load' state */
@@ -92,6 +92,7 @@ var loadState = {  /* 'load' state */
     game.load.image("arrow2", "assets/arrow2.png");
 
     game.load.tilemap('tilemap', 'assets/tilemap multi.json', null, Phaser.Tilemap.TILED_JSON);
+    game.load.tilemap('tilemap_long', 'assets/tilemap long 100x30.json', null, Phaser.Tilemap.TILED_JSON);
     game.load.image('jungletileset', 'assets/jungletileset_32x32.png');
     /* Audio */
     //game.load.audio('audio1', 'assets/audio/Wood Hits.wav');
@@ -155,9 +156,7 @@ var playState = {
     this.player = new Player(level.player.x, level.player.y, this.zoomable);
     //this.player.tank.events.onKilled.add(this.playerKilled, this);
 
-    //this.enemy = new Enemy(level.enemy[0].x, level.enemy[0].y, this.bullets, this.land, this.zoomable);
-    //this.enemy.tank.events.onKilled.add(this.enemyKilled, this);
-    this.enemys = new Enemys(level.enemy, this, this.zoomable);
+    this.enemys = new Enemys(level, this, this.zoomable, this.land);
 
     /*** Fire animation Controller ***/
     this.fire = new Fire(this.land, this.zoomable);
@@ -281,8 +280,8 @@ var playState = {
     }
 
     /************ Player **************************************/
-    for (var n=0; n<this.enemys.arr.length; n++) {
-      game.physics.arcade.collide(this.enemys.arr[n], this.bullets, tankToBulletsHandler, null, this);
+    for (var n=0; n<this.enemys.children.length; n++) {
+      game.physics.arcade.collide(this.enemys.children[n], this.bullets, tankToBulletsHandler, null, this);
     }
     game.physics.arcade.collide(this.player.tank, this.bullets, tankToBulletsHandler, null, this);
     this.player.updatePlayer( this.land );
@@ -290,7 +289,7 @@ var playState = {
     /* handle Land roving for player and enemys */
     collisionTankToLand( this.player.tank, this.land);
     this.enemys.collisionTankToLand( this.land );
-
+//console.log("enemy y:"+this.enemys.children[0].y)
   },
   render: function()
   {
@@ -306,7 +305,7 @@ var playState = {
                       || '--', 2, 14, "#00ff00");
 
     //game.debug.body(this.player.tank);
-    //if (this.enemys.arr[0]) this.enemys.debug();
+    //if (this.enemys.children[0]) this.enemys.debug();
   },
   startPlay: function() {
     /* After the title screen, called when user presses Play button. begin Play */

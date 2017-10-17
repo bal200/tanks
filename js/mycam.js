@@ -55,7 +55,7 @@ MyCam.prototype.update = function() {
       worldScale += scaleDif * this.scaleLerp;/* 0.05 Scale lerp */
     }
     // set a minimum and maximum scale value
-    var worldScale=Phaser.Math.clamp(worldScale, 0.35, 2.0);
+    var worldScale=Phaser.Math.clamp(worldScale, 0.27, 2.0);
 
     // set our world scale
     zoomable.scale.set(worldScale);
