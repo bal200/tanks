@@ -206,7 +206,7 @@ SlidingDoor = function( game, x,y , key, frame) {
   //this.body.allowGravity = false;
   //this.frame = 1;
   //this.angle = data.angle;
-  this.anchor.set(0.5, 0);
+  this.anchor.set(0, 0);
   //this.health = 10000;
   //this.origHeight = this._height; //data.length;
   //this.width = this._width;
