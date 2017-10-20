@@ -246,13 +246,13 @@ SlidingDoor.prototype.close = function() {
   //                              height: this.doorHeight},
   //  /*duration*/500, Phaser.Easing.Quintic.InOut, /*autostart*/true, /*delay*/0, /*repeat*/0, /*yoyo*/false);
   game.add.tween(this).to({doorPos: 0},
-    /*duration*/1000, Phaser.Easing.Quintic.InOut, /*autostart*/true, /*delay*/0, /*repeat*/0, /*yoyo*/false);
+    /*duration*/800, Phaser.Easing.Quintic.InOut, /*autostart*/true, /*delay*/0, /*repeat*/0, /*yoyo*/false);
 
   this.closed=true;
 }
 SlidingDoor.prototype.open = function() {
   game.add.tween(this).to({doorPos: -this.doorHeight},
-    /*duration*/1000, Phaser.Easing.Quintic.InOut, /*autostart*/true, /*delay*/0, /*repeat*/0, /*yoyo*/false);
+    /*duration*/800, Phaser.Easing.Quintic.InOut, /*autostart*/true, /*delay*/0, /*repeat*/0, /*yoyo*/false);
   this.closed=false;
 }
 /* our callback for the update signal */
@@ -267,12 +267,12 @@ SlidingDoor.prototype.update = function() {
 
 SlidingDoor.prototype.startLogic = function() {
   if (!this.logicTimeout) {
-    this.logicTimeout=game.time.events.add(4000, this.enemyLogic.bind(this), this);
+    this.logicTimeout=game.time.events.add(2000, this.enemyLogic.bind(this), this);
   }
 };
 SlidingDoor.prototype.enemyLogic = function() {
   if (this.closed) this.open(); else this.close();
-  this.logicTimeout=game.time.events.add(4000, this.enemyLogic.bind(this), this);  
+  this.logicTimeout=game.time.events.add(2000, this.enemyLogic.bind(this), this);  
 }
 
 SlidingDoor.prototype.stopLogic = function() {

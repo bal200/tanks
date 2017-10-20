@@ -19,7 +19,7 @@ var levels = [{},{  /* Settings for each level in the game */
     {scale:0.49, screenBottom:960, trigger:1600}
   ],
   player: {x:430, y:616},
-  enemy: [{x:1400, y:607, type:TANK1}],
+  /*enemy: [{x:1400, y:607, type:TANK1}], */
   bitmap: [{x1:130,y1:300,  x2:800,y2:640, type:DRAWING}, /* players drawing area */
            {x1:1100,y1:200, x2:1800,y2:640, type:ENEMY_DRAWING} /* enemys drawing bitmap area */
           ]
@@ -37,8 +37,8 @@ var levels = [{},{  /* Settings for each level in the game */
     {scale:0.44, screenBottom:960, trigger:1600}
   ],
   player: {x:430, y:616},
-  enemy: [{x:1400, y:607, type:TANK1, autoBitmap:true},
-          {x:1900, y:307, type:TANK1, autoBitmap:true}],
+  /*enemy: [{x:1400, y:607, type:TANK1, autoBitmap:true},
+          {x:1900, y:307, type:TANK1, autoBitmap:true}], */
   bitmap: [{x1:130,y1:300,  x2:800,y2:640, type:DRAWING} /* players drawing area */
 //           {x1:1299,y1:200, x2:1800,y2:640, type:ENEMY_DRAWING}, /* enemys drawing bitmap area */
 //           {x1:900,y1:200,  x2:1300,y2:640, type:ENEMY_DRAWING}  /* 2nd enemys drawing bitmap */
@@ -60,10 +60,10 @@ var levels = [{},{  /* Settings for each level in the game */
     {scale:0.44, screenBottom:960, trigger:1950}
   ],
   player: {x:300, y:416},
-  enemy: [{x:1200, y:707, type:TANK1, autoBitmap:true},
+  /*enemy: [{x:1200, y:707, type:TANK1, autoBitmap:true},
           {x:1470, y:420, type:TANK1, autoBitmap:true},
           {x:1600, y:107, type:TANK1, autoBitmap:true},
-          {x:784, y:224, type:SLIDING_DOOR, angle:0, length:192}],
+          {x:784, y:224, type:SLIDING_DOOR, angle:0, length:192}], */
   bitmap: [{x1:130,y1:300,  x2:800,y2:640, type:DRAWING} /* players drawing area */
         /*   {x1:130,y1:300,  x2:800,y2:640, type:COSMETIC} */
           ]
